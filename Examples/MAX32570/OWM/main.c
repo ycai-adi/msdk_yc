@@ -41,9 +41,9 @@
 #include <MAX32xxx.h>
 
 // Local global variables
-int pass;
-int fail;
-uint8_t utilcrc8;
+static int pass;
+static int fail;
+static uint8_t utilcrc8;
 static uint8_t dscrc_table[] = {
     0,   94,  188, 226, 97,  63,  221, 131, 194, 156, 126, 32,  163, 253, 31,  65,  157, 195, 33,
     127, 252, 162, 64,  30,  95,  1,   227, 189, 62,  96,  130, 220, 35,  125, 159, 193, 66,  28,
@@ -60,15 +60,15 @@ static uint8_t dscrc_table[] = {
     136, 214, 52,  106, 43,  117, 151, 201, 74,  20,  246, 168, 116, 42,  200, 150, 21,  75,  169,
     247, 182, 232, 10,  84,  215, 137, 107, 53};
 
-void Pass(void)
+static void Pass(void)
 {
     pass++;
 }
-void Fail(void)
+static void Fail(void)
 {
     fail++;
 }
-void Done(void)
+static void Done(void)
 {
     while (1)
         ;

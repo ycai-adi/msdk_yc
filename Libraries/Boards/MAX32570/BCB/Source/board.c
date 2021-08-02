@@ -134,7 +134,7 @@ int Console_Init(void)
 }
 
 /******************************************************************************/
-void NMI_Handler(void)
+__weak void NMI_Handler(void)
 {
     __NOP();
 }
