@@ -55,9 +55,13 @@ ifeq "$(BOARD)" ""
 BOARD=QN_EvKit_V1
 endif
 
+ifeq "$(EXAMPLE_ROOT_DIR)" ""
+EXAMPLE_ROOT_DIR=./
+endif
+
 # This is the path to the CMSIS root directory
 ifeq "$(MAXIM_PATH)" ""
-LIBS_DIR=../../../Libraries
+LIBS_DIR=$(EXAMPLE_ROOT_DIR)/../../../Libraries
 else
 LIBS_DIR=/$(subst \,/,$(subst :,,$(MAXIM_PATH))/Libraries)
 endif
@@ -78,7 +82,7 @@ SCP_PACKETS=scp_packets
 export CMSIS_ROOT
 
 # Source files for this test (add path to VPATH below)
-SRCS  = main.c
+SRCS += main.c
 SRCS += sla_header.c
 SRCS += src/ov2640.c
 SRCS += src/ov7670.c
@@ -90,14 +94,14 @@ SRCS += src/utils.c
 SRCS += src/gc0308.c
 
 # Where to find source files for this test
-VPATH=.
+VPATH += $(EXAMPLE_ROOT_DIR)
 VPATH += $(CMSIS_ROOT)/Device/Maxim/$(TARGET_UC)/Source
-VPATH += ./src
+VPATH += $(EXAMPLE_ROOT_DIR)/src
 
 # Where to find header files for this test
-IPATH = .
-IPATH += barcode/include
-IPATH += ./include
+IPATH += $(EXAMPLE_ROOT_DIR)
+IPATH += $(EXAMPLE_ROOT_DIR)/barcode/include
+IPATH += $(EXAMPLE_ROOT_DIR)/include
 
 # Enable assertion checking for development
 PROJ_CFLAGS+=-DMXC_ASSERT_ENABLE 
@@ -112,7 +116,7 @@ PROJ_CFLAGS+=-Wall
 # Use this variables to specify and alternate tool path
 #TOOL_DIR=/opt/gcc-arm-none-eabi-4_8-2013q4/bin
 
-PROJ_LIBS += barcode
+PROJ_LIBS += $(EXAMPLE_ROOT_DIR)/barcode
 
 # Use these variables to add project specific tool options
 PROJ_CFLAGS += -DBRCD_RDR_IMG_TO_PC

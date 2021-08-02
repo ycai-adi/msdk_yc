@@ -55,9 +55,13 @@ ifeq "$(BOARD)" ""
 BOARD=QN_EvKit_V1
 endif
 
+ifeq "$(EXAMPLE_ROOT_DIR)" ""
+EXAMPLE_ROOT_DIR=./
+endif
+
 # This is the path to the CMSIS root directory
 ifeq "$(MAXIM_PATH)" ""
-LIBS_DIR=../../../Libraries
+LIBS_DIR=$(EXAMPLE_ROOT_DIR)/../../../Libraries
 else
 LIBS_DIR=/$(subst \,/,$(subst :,,$(MAXIM_PATH))/Libraries)
 endif
@@ -86,7 +90,7 @@ $(error This demo example requires EMV package, Please install EMV package.)
 endif
 
 # Source files for this test (add path to VPATH below)
-SRCS  = main.c
+SRCS += main.c
 SRCS += sla_header.c
 SRCS += resources/all_imgs.c
 SRCS += src/wrapper_tft.c
@@ -125,22 +129,22 @@ SRCS += src/nfc/contactless_l1_app/EMV_polling_and_loopback.c
 
 
 # Where to find source files for this test
-VPATH=.
+VPATH += $(EXAMPLE_ROOT_DIR)
 VPATH += $(CMSIS_ROOT)/Device/Maxim/$(TARGET_UC)/Source
-VPATH += resources
-VPATH += src
-VPATH += ./src/msr
-VPATH += ./src/nfc
-VPATH += ./src/nfc/emv_l1_stack
-VPATH += ./src/nfc/contactless_l1_app
+VPATH += $(EXAMPLE_ROOT_DIR)/resources
+VPATH += $(EXAMPLE_ROOT_DIR)/src
+VPATH += $(EXAMPLE_ROOT_DIR)/src/msr
+VPATH += $(EXAMPLE_ROOT_DIR)/src/nfc
+VPATH += $(EXAMPLE_ROOT_DIR)/src/nfc/emv_l1_stack
+VPATH += $(EXAMPLE_ROOT_DIR)/src/nfc/contactless_l1_app
 
 # Where to find header files for this test
-IPATH = .
-IPATH += include
-IPATH += resources
-IPATH += include/nfc
-IPATH += include/nfc/contactless_l1_app
-IPATH += include/nfc/emv_l1_stack
+IPATH += $(EXAMPLE_ROOT_DIR)
+IPATH += $(EXAMPLE_ROOT_DIR)/include
+IPATH += $(EXAMPLE_ROOT_DIR)/resources
+IPATH += $(EXAMPLE_ROOT_DIR)/include/nfc
+IPATH += $(EXAMPLE_ROOT_DIR)/include/nfc/contactless_l1_app
+IPATH += $(EXAMPLE_ROOT_DIR)/include/nfc/emv_l1_stack
 IPATH += $(LIBS_DIR)/NFC/lib_nfc_pcd_rf_driver_MAX32570/include/nfc
 IPATH += $(LIBS_DIR)/NFC/lib_nfc_pcd_pbm/include
 
