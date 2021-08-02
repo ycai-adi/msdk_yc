@@ -199,7 +199,7 @@ PERIPH_DRIVER_DIR=$(LIBS_DIR)/PeriphDrivers
 include $(PERIPH_DRIVER_DIR)/periphdriver.mk
 export PERIPH_DRIVER_DIR
 
-RTOS_CONFIG_DIR=.
+RTOS_CONFIG_DIR=$(EXAMPLE_ROOT_DIR)
 RTOS_DIR=$(LIBS_DIR)/FreeRTOS
 include $(RTOS_DIR)/freertos.mk
 
