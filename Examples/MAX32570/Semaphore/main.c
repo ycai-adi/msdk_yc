@@ -205,7 +205,7 @@ int main(void)
 
     printf("\n\nExample running.\n\n");
     
-    while (1) {
+	while (1) {
         // check touch screen key
         key = MXC_TS_GetKey();
 
@@ -224,4 +224,6 @@ int main(void)
             }
         }
     }
+
+    return 0;
 }

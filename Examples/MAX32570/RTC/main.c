@@ -230,11 +230,8 @@ int main(void)
         return E_BUSY;
     }
     
-    if (MXC_RTC_SquareWaveStart(MXC_RTC_F_512HZ) == E_BUSY) {
-        return E_BUSY;
-    }
-	
-    if (MXC_RTC_Start() != E_NO_ERROR) {
+    ret_val = MXC_RTC_Start();
+    if (ret_val != E_NO_ERROR) {
         printf("Failed RTC_Start\n");
         printf("Example Failed\n");
         

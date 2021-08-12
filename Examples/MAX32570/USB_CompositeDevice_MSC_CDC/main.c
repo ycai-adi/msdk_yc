@@ -124,6 +124,7 @@ void USB_IRQHandler(void)
 /* ************************************************************************** */
 int main(void)
 {
+    int ret_val = E_NO_ERROR;
     maxusb_cfg_options_t usb_opts;
 
     printf("\n\n****** " TOSTRING(
@@ -143,17 +144,19 @@ int main(void)
     usb_opts.shutdown_callback = usbShutdownCallback;
 
     /* Initialize the usb module */
-    if (MXC_USB_Init(&usb_opts) != 0) {
+    ret_val = MXC_USB_Init(&usb_opts);
+    if (ret_val != E_NO_ERROR) {
         printf("usb_init() failed\n");
         
-        while (1);
+        return ret_val;
     }
 
     /* Initialize the enumeration module */
-    if (enum_init() != 0) {
+    ret_val = enum_init();
+    if (ret_val != E_NO_ERROR) {
         printf("enum_init() failed\n");
         
-        while (1);
+        return ret_val;
     }
 
     /* Register enumeration data */
@@ -174,16 +177,18 @@ int main(void)
     enum_register_callback(ENUM_CLRFEATURE, clrfeatureCallback, NULL);
 
     /* Initialize the class driver */
-    if (msc_init(&composite_config_descriptor.msc_interface_descriptor, &ids, &mem) != 0) {
+    ret_val = msc_init(&composite_config_descriptor.msc_interface_descriptor, &ids, &mem);
+    if (ret_val != E_NO_ERROR) {
         printf("msc_init() failed\n");
         
-        while (1);
+        return ret_val;
     }
     
-    if (acm_init(&composite_config_descriptor.comm_interface_descriptor) != 0) {
+    ret_val = acm_init(&composite_config_descriptor.comm_interface_descriptor);
+    if (ret_val != E_NO_ERROR) {
         printf("acm_init() failed\n");
         
-        while (1);
+        return ret_val;
     }
 
     /* Register callbacks */

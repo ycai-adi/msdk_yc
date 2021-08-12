@@ -54,6 +54,11 @@
 #include "tft_ssd2119.h"
 
 /***** Definitions *****/
+
+#ifndef MAX_LOOP_COUNTER
+  #define MAX_LOOP_COUNTER 0  /* Use 0 for an infinite loop. */
+#endif
+
 #define LED_FLASH   0
 #define LED_ALARM   0
 
@@ -159,6 +164,7 @@ static int setup_display(void)
 // *****************************************************************************
 int main(void)
 {
+    int ret_val = E_NO_ERROR;
     int key;
 
     printf("\n******************** High Speed Timer Example ******************\n\n");
@@ -176,21 +182,27 @@ int main(void)
     /* Turn LED off initially */
     LED_Off(LED_ALARM);
     
-    if (MXC_HTMR_Init(MXC_HTMR0, 0, 0) != E_NO_ERROR) {
+    ret_val = MXC_HTMR_Init(MXC_HTMR0, 0, 0);
+    if (ret_val != E_NO_ERROR) {
         printf("Failed HTMR Initialization.\n");
-        
-        while (1);
+        return ret_val;
     }
     
-    if (MXC_HTMR_SetShortAlarm(MXC_HTMR0, 0xFFC7BFFF) != E_NO_ERROR) {
+    ret_val = MXC_HTMR_SetShortAlarm(MXC_HTMR0, 0xFFC7BFFF);
+    if (ret_val != E_NO_ERROR) {
         printf("Failed to set short interval alarm\n");
+        return ret_val;
     }
 
     MXC_HTMR_Start(MXC_HTMR0);
     printf("\nTimer started.\n\n");
     printTime();
     
-    while (1) {
+#if(MAX_LOOP_COUNTER == 0)
+    while(1) {
+#else
+    for(int i = 0; i < MAX_LOOP_COUNTER; i++) {
+#endif
         // check touch screen key
         key = MXC_TS_GetKey();
 
@@ -214,4 +226,8 @@ int main(void)
             }
         }
     }
+
+#if(MAX_LOOP_COUNTER)
+    return ret_val;
+#endif
 }
