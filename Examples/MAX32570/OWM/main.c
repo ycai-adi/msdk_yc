@@ -41,8 +41,6 @@
 #include <MAX32xxx.h>
 
 // Local global variables
-static int pass;
-static int fail;
 static uint8_t utilcrc8;
 static uint8_t dscrc_table[] = {
     0,   94,  188, 226, 97,  63,  221, 131, 194, 156, 126, 32,  163, 253, 31,  65,  157, 195, 33,
@@ -60,19 +58,6 @@ static uint8_t dscrc_table[] = {
     136, 214, 52,  106, 43,  117, 151, 201, 74,  20,  246, 168, 116, 42,  200, 150, 21,  75,  169,
     247, 182, 232, 10,  84,  215, 137, 107, 53};
 
-static void Pass(void)
-{
-    pass++;
-}
-static void Fail(void)
-{
-    fail++;
-}
-static void Done(void)
-{
-    while (1)
-        ;
-}
 
 //--------------------------------------------------------------------------
 // Reset crc8 to the value passed in
@@ -163,8 +148,6 @@ int32_t ow_romid_test(uint8_t od)
 
 int main(void)
 {
-    pass       = 0;
-    fail       = 0;
     int retval = 0;
     printf("***** 1-Wire ROM (DS2401) Example *****\n");
 
@@ -179,14 +162,11 @@ int main(void)
 
     /* Test overdrive */
     if ((retval = ow_romid_test(1))) {
-        Fail();
         printf("Overdrive results: %d; %08x; %08x \n", retval, MXC_OWM->cfg, MXC_OWM->intfl);
         printf("Example Failed\n");
     } else {
-        Pass();
         printf("Example Succeeded\n");
     }
 
-    Done();
-    return 0;
+    return retval;
 }

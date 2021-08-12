@@ -51,6 +51,10 @@
 #define USE_INTERRUPTS
 // #define DMA
 
+#ifndef MAX_LOOP_COUNTER
+  #define MAX_LOOP_COUNTER 0  /* Use 0 for an infinite loop. */
+#endif
+
 /***** Globals *****/
 #ifdef USE_INTERRUPTS
 volatile unsigned int adc_done = 0;
@@ -92,16 +96,15 @@ void DMA_Callback(int ch, int error)
 
 int main(void)
 {
-    // unsigned int overflow;
-
+    int ret_val = E_NO_ERROR;
+    
     printf("ADC Example\n");
 
-    /* Initialize ADC */
-    if (MXC_ADC_Init() != E_NO_ERROR) {
-        printf("Error Bad Parameter\n");
-
-        while (1)
-            ;
+    /* Initialize ADC */   
+    ret_val = MXC_ADC_Init();
+    if (ret_val != E_NO_ERROR) {
+        printf("Error ADC Init\n");
+        return ret_val;
     }
 
     /* Set up LIMIT0 to monitor high and low trip points */
@@ -118,8 +121,12 @@ int main(void)
     MXC_DMA_ReleaseChannel(0);
     NVIC_EnableIRQ(DMA0_IRQn);
 #endif
-
+    
+#if(MAX_LOOP_COUNTER == 0)
     while (1) {
+#else
+    for (int i = 0; i < MAX_LOOP_COUNTER; i++) {
+#endif
         /* Flash LED when starting ADC cycle */
         LED_On(0);
         MXC_TMR_Delay(MXC_TMR0, MSEC(10));
@@ -166,4 +173,9 @@ int main(void)
         /* Delay for 1/4 second before next reading */
         MXC_TMR_Delay(MXC_TMR0, MSEC(250));
     }
+
+#if(MAX_LOOP_COUNTER)
+    return ret_val;
+#endif
+
 }

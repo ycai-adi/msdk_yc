@@ -288,13 +288,8 @@ int main(void)
         printf("Example Succeeded\n");
     } else {
         printf("Example failed\n");
-
-        while (1)
-            ;
+        
     }
-
-    while (1)
-        ;
-
-    return 0;
+    
+    return fail;
 }

@@ -89,6 +89,7 @@ void USB_IRQHandler(void)
 /******************************************************************************/
 int main(void)
 {
+    int ret_val = E_NO_ERROR;
     maxusb_cfg_options_t usb_opts;
 
     printf("\n\n***** " TOSTRING(TARGET) " USB HID Keyboard Example *****\n");
@@ -107,19 +108,19 @@ int main(void)
     usb_opts.shutdown_callback = usbShutdownCallback;
 
     /* Initialize the usb module */
-    if (MXC_USB_Init(&usb_opts) != 0) {
+    ret_val = MXC_USB_Init(&usb_opts);
+    if (ret_val != E_NO_ERROR) {
         printf("MXC_USB_Init() failed\n");
-
-        while (1)
-            ;
+        
+        return ret_val;
     }
 
     /* Initialize the enumeration module */
-    if (enum_init() != 0) {
+    ret_val = enum_init();
+    if (ret_val != E_NO_ERROR) {
         printf("enum_init() failed\n");
-
-        while (1)
-            ;
+        
+        return ret_val;
     }
 
     /* Register enumeration data */
@@ -138,12 +139,12 @@ int main(void)
     enum_register_callback(ENUM_CLRFEATURE, clrfeatureCallback, NULL);
 
     /* Initialize the class driver */
-    if (hidkbd_init(&config_descriptor.interface_descriptor, &config_descriptor.hid_descriptor,
-                    report_descriptor) != 0) {
+    ret_val = hidkbd_init(&config_descriptor.interface_descriptor, &config_descriptor.hid_descriptor,
+                          report_descriptor);
+    if (ret_val != E_NO_ERROR) {
         printf("hidkbd_init() failed\n");
-
-        while (1)
-            ;
+        
+        return ret_val;
     }
 
     /* Register callbacks */
@@ -151,11 +152,11 @@ int main(void)
     MXC_USB_EventEnable(MAXUSB_EVENT_VBUS, eventCallback, NULL);
 
     /* Register callback for keyboard events */
-    if (PB_RegisterCallback(0, buttonCallback) != E_NO_ERROR) {
+    ret_val = PB_RegisterCallback(0, buttonCallback);
+    if (ret_val != E_NO_ERROR) {
         printf("PB_RegisterCallback() failed\n");
-
-        while (1)
-            ;
+        
+        return ret_val;
     }
 
     /* Start with USB in low power mode */
@@ -196,6 +197,8 @@ int main(void)
             }
         }
     }
+
+    return ret_val;
 }
 
 /******************************************************************************/

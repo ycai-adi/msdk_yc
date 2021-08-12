@@ -342,4 +342,6 @@ int main(void)
     }
 
     printf(" *** END OF EXAMPLE *** \n");
+
+    return result;
 }

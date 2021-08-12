@@ -46,8 +46,13 @@
 #include <MAX32xxx.h>
 
 /***** Definitions *****/
-#define MXC_GPIO_PORT_IN MXC_GPIO0
-#define MXC_GPIO_PIN_IN  MXC_GPIO_PIN_16
+
+#ifndef MAX_LOOP_COUNTER
+  #define MAX_LOOP_COUNTER 0  /* Use 0 for an infinite loop. */
+#endif
+
+#define MXC_GPIO_PORT_IN                MXC_GPIO0
+#define MXC_GPIO_PIN_IN                 MXC_GPIO_PIN_16
 
 #define MXC_GPIO_PORT_OUT MXC_GPIO0
 #define MXC_GPIO_PIN_OUT  MXC_GPIO_PIN_17
@@ -122,8 +127,12 @@ int main(void)
     gpio_out.func        = MXC_GPIO_FUNC_OUT;
     gpio_interrupt.vssel = MXC_GPIO_VSSEL_VDDIO;
     MXC_GPIO_Config(&gpio_out);
-
+    
+#if(MAX_LOOP_COUNTER == 0)
     while (1) {
+#else
+    for (int i = 0; i < MAX_LOOP_COUNTER; i++) {
+#endif
         /* Read state of the input pin. */
         if (MXC_GPIO_InGet(gpio_in.port, gpio_in.mask)) {
             /* Input pin was high, set the output pin. */

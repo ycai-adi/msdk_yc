@@ -259,4 +259,6 @@ int main(void)
         MXC_LP_EnterBackupMode();
 #endif // DO_BACKUP
     }
+
+    return 0;
 }

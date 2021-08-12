@@ -104,6 +104,7 @@ void spixf_cfg_setup()
 /******************************************************************************/
 int main(void)
 {
+    int ret_val = E_NO_ERROR;
     uint32_t id;
     void (*func)(void);
     uint8_t rx_buf[(uint32_t)(&__load_length_xip)];
@@ -120,9 +121,8 @@ int main(void)
     if (Ext_Flash_Init() != E_NO_ERROR) {
         printf("Board Init Failed\n");
         printf("Example Failed\n");
-
-        while (1)
-            ;
+        
+        return ret_val;
     }
 
     printf("%s Initialized.\n\n", EXT_FLASH_NAME);
@@ -135,9 +135,8 @@ int main(void)
     } else {
         printf("Error verifying External Flash ID: 0x%x\n", id);
         printf("Example Failed\n");
-
-        while (1)
-            ;
+        ret_val = E_UNKNOWN;
+        return ret_val;
     }
 
     int err;
@@ -204,7 +203,8 @@ int main(void)
         printf("Example Succeeded\n\n");
     } else {
         printf("Example Failed\n\n");
+        ret_val = E_UNKNOWN;
     }
-
-    return 0;
+    
+    return ret_val;
 }

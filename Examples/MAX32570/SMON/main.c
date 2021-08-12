@@ -130,4 +130,6 @@ int main(void)
     Test2();
 
     printf("\nExample Completed\n\n");
+
+    return 0;
 }

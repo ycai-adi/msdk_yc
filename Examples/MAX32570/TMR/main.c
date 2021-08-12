@@ -48,6 +48,10 @@
 
 /***** Definitions *****/
 
+#ifndef MAX_LOOP_COUNTER
+  #define MAX_LOOP_COUNTER 0  /* Use 0 for an infinite loop. */
+#endif
+
 // Parameters for PWM output
 #define FREQ       200      // (Hz)
 #define DUTY_CYCLE 75       // (%)
@@ -161,9 +165,13 @@ int main(void)
     MXC_NVIC_SetVector(TMR1_IRQn, ContinuousTimerHandler);
     NVIC_EnableIRQ(TMR1_IRQn);
     ContinuousTimer();
-
-    while (1)
-        ;
-
+    
+#if(MAX_LOOP_COUNTER == 0)
+    while (1) {
+#else
+    for (int i = 0; i < MAX_LOOP_COUNTER; i++) {
+#endif
+    }
+    
     return 0;
 }

@@ -58,6 +58,10 @@
 #include <MAX32xxx.h>
 
 /***** Definitions *****/
+#ifndef MAX_LOOP_COUNTER
+  #define MAX_LOOP_COUNTER 0  /* Use 0 for an infinite loop. */
+#endif
+
 /***** Globals *****/
 //use push buttons defined in board.h
 extern const mxc_gpio_cfg_t pb_pin[];
@@ -122,8 +126,12 @@ int main(void)
 
     //Setup watchdog
     MXC_WDT_Setup();
-
+    
+#if(MAX_LOOP_COUNTER == 0)
     while (1) {
+#else
+    for (int i = 0; i < MAX_LOOP_COUNTER; i++) {
+#endif
         //Push SW1 to reset watchdog
         if (MXC_GPIO_InGet(pb_pin[SW1].port, pb_pin[SW1].mask) == 0) {
             printf("Enabling Timeout Interrupt...\n");
@@ -146,4 +154,6 @@ int main(void)
         //Reset watchdog
         MXC_WDT_ResetTimer(MXC_WDT0);
     }
+
+    return E_NO_ERROR;
 }

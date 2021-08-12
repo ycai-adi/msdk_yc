@@ -147,8 +147,9 @@ int main(void)
         printf("RTC Initialization Failed ( 0x%X )\n", result);
         return result;
     }
-
-    if (MXC_RTC_Start() != E_NO_ERROR) {
+    
+    result = MXC_RTC_Start();
+    if (result != E_NO_ERROR) {
         printf("RTC Start Failed ( 0x%X )\n", result);
         return result;
     }

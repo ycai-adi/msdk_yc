@@ -71,7 +71,7 @@ mxc_spixr_cfg_t init_cfg = {
 
 /***** Functions *****/
 /******************************************************************************/
-void setup(void)
+int setup(void)
 {
     uint8_t quad_cmd = A1024_EQIO; /* pre-defined command to use quad mode         */
 
@@ -79,9 +79,8 @@ void setup(void)
     if (MXC_SPIXR_Init(&init_cfg) != E_NO_ERROR) {
         printf("\nSPIXR was not initialized properly.\n");
         printf("\nExample Failed\n");
-
-        while (1)
-            ;
+        
+        return E_UNKNOWN;
     }
 
     MXC_GCR->sysctrl |= MXC_F_GCR_SYSCTRL_SRCC_DIS;
@@ -108,6 +107,8 @@ void setup(void)
     MXC_SPIXR_ExMemSetReadCommand(A1024_READ);
     MXC_SPIXR_ExMemSetWriteCommand(A1024_WRITE);
     MXC_SPIXR_ExMemEnable();
+
+    return E_NO_ERROR;
 }
 
 // *****************************************************************************
@@ -119,17 +120,19 @@ int main(void)
     uint8_t* address = (uint8_t*)A1024_ADDRESS;
     ; /* Variable to store address of RAM */
     int temp, i;
-    int fail = 0;
-
+    int ret_val = E_NO_ERROR;
+    
     printf("\n****************** SPIXR Example ******************\n\n");
     printf("This example communicates with an MX25 SPI RAM on the\n");
     printf("EvKit using Quad SPI mode And the SPIXR peripheral\n");
 
     // Configure the SPIXR
     printf("\nSetting up the SPIXR\n");
-
-    setup();
-
+    
+    if (setup() != E_NO_ERROR) {
+        return E_UNKNOWN;
+    }
+    
     // Initialize & write pseudo-random data to be written to the RAM
     // printf("Initializing & Writing pseudo-random data to RAM \n");
     srand(0);
@@ -156,19 +159,14 @@ int main(void)
     MXC_SPIXR_Disable();
 
     // Verify data being read from RAM
-    if (memcmp(write_buffer, read_buffer, BUFFER_SIZE)) {
+    ret_val = memcmp(write_buffer, read_buffer, BUFFER_SIZE);
+    if (ret_val) {
         printf("\n\nDATA IS NOT VERIFIED.\n\n");
-        fail++;
+        printf("EXAMPLE FAILED\n");
     } else {
         printf("\n\nDATA IS VERIFIED.\n\n");
-    }
-
-    if (fail == 0) {
         printf("EXAMPLE SUCCEEDED\n");
-    } else {
-        printf("EXAMPLE FAILED\n");
     }
 
-    while (1)
-        ;
+    return ret_val;
 }

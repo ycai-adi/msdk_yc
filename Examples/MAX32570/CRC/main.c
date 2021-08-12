@@ -74,8 +74,10 @@ void Test_Result(int result)
     }
 }
 
-void Test_CRC(int asynchronous)
+
+int Test_CRC(int asynchronous)
 {
+    int ret_val = E_NO_ERROR;
     uint32_t array[101];
     int i;
 
@@ -118,16 +120,23 @@ void Test_CRC(int asynchronous)
         MXC_CTB_CRC_Compute(&crc_req);
     }
 
-    Test_Result(CHECK != crc_req.resultCRC);
+    if (CHECK != crc_req.resultCRC) {
+        ret_val = E_UNKNOWN;
+    }
+    
+    Test_Result(ret_val);
     MXC_CTB_Shutdown(MXC_CTB_FEATURE_CRC | MXC_CTB_FEATURE_DMA);
+
+    return ret_val;
 }
 
 // *****************************************************************************
 int main(void)
 {
-    Test_CRC(0);
-    Test_CRC(1);
+    int ret_val = E_NO_ERROR;
 
-    while (1) {
-    }
+    ret_val = Test_CRC(0);
+    ret_val += Test_CRC(1);
+
+    return ret_val;
 }

@@ -91,7 +91,7 @@ void SPI_Callback(mxc_spi_req_t* req, int error)
 
 int main(void)
 {
-    int i, j, retVal;
+    int i, j, retVal = E_NO_ERROR;
     uint16_t temp;
     mxc_spi_req_t req;
 
@@ -112,11 +112,11 @@ int main(void)
         }
 
         // Configure the peripheral
-        if (MXC_SPI_Init(SPI, 1, 0, 1, 0, SPI_SPEED) != E_NO_ERROR) {
+        retVal = MXC_SPI_Init(SPI, 1, 0, 1, 0, SPI_SPEED);
+        if (retVal != E_NO_ERROR) {
             printf("\nSPI INITIALIZATION ERROR\n");
-
-            while (1) {
-            }
+            
+            return retVal;
         }
 
         memset(rx_data, 0x0, DATA_LEN * sizeof(uint16_t));

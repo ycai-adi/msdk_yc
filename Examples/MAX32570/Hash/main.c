@@ -88,8 +88,11 @@ void ascii_to_byte(const char* src, char* dst, int len)
     }
 }
 
-void Test_Hash(int asynchronous)
+
+int Test_Hash(int asynchronous)
 {
+    int ret_val = 0;
+
     printf(asynchronous ? "Test Hash Async\n" : "Test Hash Sync\n");
 
     unsigned char sha256_msg[] =
@@ -122,21 +125,31 @@ void Test_Hash(int asynchronous)
     } else {
         MXC_CTB_Hash_Compute(&hash_req);
     }
+    
+    ret_val = memcmp(sha256_result, destination, 32);
+    
+    if (ret_val) {
+        printf(" * Failed *\n\n");
+    }
+    else {
+        printf("   Passed  \n\n");
+    }
 
-    Test_Result(memcmp(sha256_result, destination, 32));
     MXC_CTB_Shutdown(MXC_CTB_FEATURE_HASH);
-
-    return;
+    
+    return ret_val;
 }
 
 int main(void)
 {
+    int ret_val = E_NO_ERROR;
+
     printf("\n\n********** CTB Hash Example **********\n\n");
-
-    Test_Hash(0);
-    Test_Hash(1);
-
+    
+    ret_val += Test_Hash(0);
+    ret_val += Test_Hash(1);
+    
     printf("\n*** Done ***\n");
-
-    return 0;
+    
+    return ret_val;
 }

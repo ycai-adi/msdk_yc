@@ -50,7 +50,12 @@
 #include <MAX32xxx.h>
 
 /***** Definitions *****/
-#define ALL_PT 0x7F
+
+#ifndef MAX_LOOP_COUNTER
+  #define MAX_LOOP_COUNTER 0  /* Use 0 for an infinite loop. */
+#endif
+
+#define    ALL_PT    0x7F
 /***** Globals *****/
 
 /***** Functions *****/
@@ -64,8 +69,9 @@ void PT_IRQHandler(void)
 }
 
 // *****************************************************************************
-void ContinuousPulseTrain(void)
+int ContinuousPulseTrain(void)
 {
+    int ret_val = E_NO_ERROR;
     //Setup GPIO to PT output function
     //GPIO P0.13 uses PT4
 
@@ -77,29 +83,40 @@ void ContinuousPulseTrain(void)
     ptConfig.pattern   = 0x16;
     ptConfig.loop      = 0; //continuous loop
     ptConfig.loopDelay = 0;
+    
+    ret_val = MXC_PT_Config(&ptConfig);
+    
+    if (ret_val == E_NO_ERROR) {
+        //start PT4
+        MXC_PT_Start(MXC_F_PTG_ENABLE_PT4);
+    }
 
-    MXC_PT_Config(&ptConfig);
-
-    //start PT4
-    MXC_PT_Start(MXC_F_PTG_ENABLE_PT4);
+    return ret_val;
 }
 
 // *****************************************************************************
-void SquareWave(void)
+int SquareWave(void)
 {
+    int ret_val = E_NO_ERROR;
     //Setup GPIO to PT output function
     //GPIO P0.12 uses PT3
+    
+    uint32_t freq = 10;                      //Hz
+    ret_val = MXC_PT_SqrWaveConfig(3, freq); //PT3
+    
+    if (ret_val == E_NO_ERROR) {
+        //start PT3
+        MXC_PT_Start(MXC_F_PTG_ENABLE_PT3);
+    }
 
-    uint32_t freq = 10;            //Hz
-    MXC_PT_SqrWaveConfig(3, freq); //PT3
-
-    //start PT3
-    MXC_PT_Start(MXC_F_PTG_ENABLE_PT3);
+    return ret_val;
 }
 
 // *****************************************************************************
 int main(void)
 {
+    int ret_val = E_NO_ERROR;
+    
     printf("\n*************** Pulse Train Demo ****************\n");
     printf("LED0 = Outputs continuous pattern of 10110b at 2bps\n");
     printf("LED1 = Outputs 10Hz continuous square wave\n");
@@ -112,9 +129,15 @@ int main(void)
     MXC_PT_Init(MXC_PT_CLK_DIV1); //initialize pulse trains
 
     //configure and start pulse trains
-    ContinuousPulseTrain();
-    SquareWave();
-
-    while (1) {
+    ret_val = ContinuousPulseTrain();
+    ret_val += SquareWave();
+    
+#if(MAX_LOOP_COUNTER == 0)
+	while (1) {
+#else
+	for (int i = 0; i < MAX_LOOP_COUNTER; i++) {
+#endif
     }
+
+    return ret_val;
 }

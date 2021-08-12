@@ -73,14 +73,17 @@ mxc_spixr_cfg_t init_cfg = {
 
 /***** Functions *****/
 
-void setup(void)
-{
-    uint8_t quad_cmd = A1024_EQIO; /* pre-defined command to use quad mode         */
 
+int setup(void)
+{
+    int ret_val = E_NO_ERROR;
+    uint8_t quad_cmd =  A1024_EQIO; /* pre-defined command to use quad mode         */
+    
     // Initialize the desired configuration
-    if (MXC_SPIXR_Init(&init_cfg) != E_NO_ERROR) {
+    ret_val = MXC_SPIXR_Init(&init_cfg);
+    if (ret_val != E_NO_ERROR) {
         printf("FAILED: SPIXR was not initialized properly.\n");
-        return;
+        return ret_val;
     }
 
     /* Hide this with function in SPIXR.C later */
@@ -108,14 +111,19 @@ void setup(void)
     MXC_SPIXR_ExMemEnable();
 }
 
-void start_timer(void)
+int start_timer(void)
 {
-    if (MXC_RTC_Init(0, 0) != E_NO_ERROR) {
+    int ret_val = E_NO_ERROR;
+
+    ret_val = MXC_RTC_Init(0, 0);
+    if (ret_val != E_NO_ERROR) {
         printf("Failed setup_timer.\n");
-        return;
+        return ret_val;
     }
 
     MXC_RTC_Start();
+
+    return ret_val;
 }
 
 void stop_timer(void)
@@ -124,8 +132,10 @@ void stop_timer(void)
     MXC_RTC_Stop();
 }
 
-void test_function(void)
+
+int test_function(void)
 {
+    int ret_val = E_NO_ERROR;
     // Defining Variable(s) to write & store data to RAM
     uint8_t write_buffer[BUFFER_SIZE], read_buffer[BUFFER_SIZE];
     uint8_t* address = (uint8_t*)A1024_ADDRESS;
@@ -133,7 +143,10 @@ void test_function(void)
     int temp, i;
 
     // Configure the SPIXR
-    setup();
+    ret_val = setup();
+    if (ret_val != E_NO_ERROR) {
+        return ret_val;
+    }
 
     // Initialize & write pseudo-random data to be written to the RAM
     srand(0);
@@ -144,8 +157,11 @@ void test_function(void)
         // Write the data to the RAM
         *(address + i) = temp;
     }
-
-    start_timer();
+    
+    ret_val = start_timer();
+    if (ret_val != E_NO_ERROR) {
+        return ret_val;
+    }
 
     for (temp = 0; temp < ITERATIONS; temp++) {
         // Read data from RAM
@@ -164,25 +180,28 @@ void test_function(void)
 
     // Disable the SPIXR
     MXC_SPIXR_Disable();
+
+    return ret_val;
 }
 
 // *****************************************************************************
 int main(void)
 {
+    int ret_val = E_NO_ERROR;
+
     printf("***** SRCC Example *****\n\n");
 
     //Instruction cache enabled
     printf("Running test reads with data cache enabled.   ");
     MXC_SRCC_Enable();
-    test_function();
-
+    ret_val = test_function();
+    
     //Instruction cache disabled
     printf("Running test reads with data cache disabled.  ");
     MXC_SRCC_Disable();
-    test_function();
-
+    ret_val += test_function();
+    
     printf("Example complete.\n");
-
-    while (1) {
-    }
+    
+    return ret_val;
 }

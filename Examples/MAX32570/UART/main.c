@@ -87,10 +87,11 @@ void UART1_Handler(void)
 /******************************************************************************/
 int main(void)
 {
-    int error, i, fail = 0;
-    uint8_t TxData[BUFF_SIZE];
-    uint8_t RxData[BUFF_SIZE];
-
+    int ret_val = E_NO_ERROR;
+    int i = 0;
+    uint8_t TxData[BUFF_SIZE] = {0};
+    uint8_t RxData[BUFF_SIZE] = {0};
+    
     printf("\n\n**************** UART Example ******************\n");
     printf("This example sends data from one UART to another\n");
     printf("\nThe LED (P2.17) is used to indicate the success of the test.\nLED ON -> Success\n");
@@ -125,18 +126,16 @@ int main(void)
 #endif
 
     // Initialize the UART
-    if ((error = MXC_UART_Init(MXC_UART1, UART_BAUD)) != E_NO_ERROR) {
-        printf("-->Error initializing UART: %d\n", error);
+    if ((ret_val = MXC_UART_Init(MXC_UART1, UART_BAUD)) != E_NO_ERROR) {
+        printf("-->Error initializing UART: %d\n", ret_val);
         printf("-->Example Failed\n");
-        while (1) {
-        }
+        return ret_val;
     }
-
-    if ((error = MXC_UART_Init(MXC_UART3, UART_BAUD)) != E_NO_ERROR) {
-        printf("-->Error initializing UART: %d\n", error);
+    
+    if ((ret_val = MXC_UART_Init(MXC_UART3, UART_BAUD)) != E_NO_ERROR) {
+        printf("-->Error initializing UART: %d\n", ret_val);
         printf("-->Example Failed\n");
-        while (1) {
-        }
+        return ret_val;
     }
 
     printf("-->UART Initialized\n\n");
@@ -157,30 +156,28 @@ int main(void)
     write_req.callback = NULL;
 
     READ_FLAG = 1;
-    DMA_FLAG  = 1;
-
-#ifdef DMA
-    error = MXC_UART_TransactionDMA(&read_req);
+    DMA_FLAG = 1;
+    
+#ifdef  DMA
+    ret_val = MXC_UART_TransactionDMA(&read_req);
 #else
-    error = MXC_UART_TransactionAsync(&read_req);
+    ret_val = MXC_UART_TransactionAsync(&read_req);
 #endif
-
-    if (error != E_NO_ERROR) {
-        printf("-->Error starting async read: %d\n", error);
+    
+    if (ret_val != E_NO_ERROR) {
+        printf("-->Error starting async read: %d\n", ret_val);
         printf("-->Example Failed\n");
-
-        while (1) {
-        }
+        
+        return ret_val;
     }
-
-    error = MXC_UART_Transaction(&write_req);
-
-    if (error != E_NO_ERROR) {
-        printf("-->Error starting sync write: %d\n", error);
+    
+    ret_val = MXC_UART_Transaction(&write_req);
+    
+    if (ret_val != E_NO_ERROR) {
+        printf("-->Error starting sync write: %d\n", ret_val);
         printf("-->Example Failed\n");
-
-        while (1) {
-        }
+        
+        return ret_val;
     }
 
 #ifdef DMA
@@ -195,27 +192,27 @@ int main(void)
 
     if (READ_FLAG != E_NO_ERROR) {
         printf("-->Error with UART_ReadAsync callback; %d\n", READ_FLAG);
-        fail++;
+        ret_val = E_UNKNOWN;
     }
 
 #endif
-
-    if ((error = memcmp(RxData, TxData, BUFF_SIZE)) != 0) {
-        printf("-->Error verifying Data: %d\n", error);
-        fail++;
-    } else {
+    
+    if ((ret_val = memcmp(RxData, TxData, BUFF_SIZE)) != 0) {
+        printf("-->Error verifying Data: %d\n", ret_val);
+        ret_val = E_UNKNOWN;
+    }
+    else {
         printf("-->Data verified\n");
     }
 
     printf("\n");
-
-    if (fail == 0) {
+    
+    if (ret_val == E_NO_ERROR) {
         LED_On(0);
         printf("-->EXAMPLE SUCCEEDED\n");
     } else {
         printf("-->EXAMPLE FAILED\n");
     }
-
-    while (1) {
-    }
+    
+    return ret_val;
 }
