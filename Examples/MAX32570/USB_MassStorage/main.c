@@ -56,8 +56,8 @@
 #include "mscmem.h"
 
 /***** Definitions *****/
-#define EVENT_ENUM_COMP   MAXUSB_NUM_EVENTS
-#define EVENT_REMOTE_WAKE (EVENT_ENUM_COMP + 1)
+#define EVENT_ENUM_COMP     MAXUSB_NUM_EVENTS
+#define EVENT_REMOTE_WAKE   (EVENT_ENUM_COMP + 1)
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x)  STRINGIFY(x)
@@ -115,7 +115,6 @@ void USB_IRQHandler(void)
 /******************************************************************************/
 int main(void)
 {
-    int ret_val = E_NO_ERROR;
     maxusb_cfg_options_t usb_opts;
 
     printf("\n\n***** " TOSTRING(TARGET) " USB Mass Storage Example *****\n");
@@ -134,19 +133,17 @@ int main(void)
     usb_opts.shutdown_callback = usbShutdownCallback;
 
     /* Initialize the usb module */
-    ret_val = MXC_USB_Init(&usb_opts);
-    if (ret_val != E_NO_ERROR) {
-        printf("usb_init() failed\n");
+    if (MXC_USB_Init(&usb_opts) != 0) {
+        printf("MXC_USB_Init() failed\n");
         
-        return ret_val;
+        while (1);
     }
 
     /* Initialize the enumeration module */
-    ret_val = enum_init();
-    if (ret_val != E_NO_ERROR) {
+    if (enum_init() != 0) {
         printf("enum_init() failed\n");
         
-        return ret_val;
+        while (1);
     }
 
     /* Register enumeration data */
@@ -165,11 +162,10 @@ int main(void)
     enum_register_callback(ENUM_CLRFEATURE, clrfeatureCallback, NULL);
 
     /* Initialize the class driver */
-    ret_val = msc_init(&config_descriptor.msc_interface_descriptor, &ids, &mem);
-    if (ret_val != E_NO_ERROR) {
+    if (msc_init(&config_descriptor.msc_interface_descriptor, &ids, &mem) != 0) {
         printf("msc_init() failed\n");
         
-        return ret_val;
+        while (1);
     }
 
     /* Register callback */
@@ -214,8 +210,6 @@ int main(void)
             }
         }
     }
-
-    return ret_val;
 }
 
 /* This callback is used to allow the driver to call part specific initialization functions. */

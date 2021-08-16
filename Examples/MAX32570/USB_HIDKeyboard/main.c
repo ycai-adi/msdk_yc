@@ -89,7 +89,6 @@ void USB_IRQHandler(void)
 /******************************************************************************/
 int main(void)
 {
-    int ret_val = E_NO_ERROR;
     maxusb_cfg_options_t usb_opts;
 
     printf("\n\n***** " TOSTRING(TARGET) " USB HID Keyboard Example *****\n");
@@ -112,15 +111,14 @@ int main(void)
     if (ret_val != E_NO_ERROR) {
         printf("MXC_USB_Init() failed\n");
         
-        return ret_val;
+        while (1);
     }
 
     /* Initialize the enumeration module */
-    ret_val = enum_init();
-    if (ret_val != E_NO_ERROR) {
+    if (enum_init() != 0) {
         printf("enum_init() failed\n");
         
-        return ret_val;
+        while (1);
     }
 
     /* Register enumeration data */
@@ -144,7 +142,7 @@ int main(void)
     if (ret_val != E_NO_ERROR) {
         printf("hidkbd_init() failed\n");
         
-        return ret_val;
+        while (1);
     }
 
     /* Register callbacks */
@@ -152,11 +150,10 @@ int main(void)
     MXC_USB_EventEnable(MAXUSB_EVENT_VBUS, eventCallback, NULL);
 
     /* Register callback for keyboard events */
-    ret_val = PB_RegisterCallback(0, buttonCallback);
-    if (ret_val != E_NO_ERROR) {
+    if (PB_RegisterCallback(0, buttonCallback) != E_NO_ERROR) {
         printf("PB_RegisterCallback() failed\n");
         
-        return ret_val;
+        while (1);
     }
 
     /* Start with USB in low power mode */
@@ -197,8 +194,6 @@ int main(void)
             }
         }
     }
-
-    return ret_val;
 }
 
 /******************************************************************************/

@@ -118,6 +118,4 @@ int main(void)
             }
         }
     }
-
-    return E_NO_ERROR;
 }

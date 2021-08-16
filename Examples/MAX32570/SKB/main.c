@@ -101,7 +101,6 @@ int main(void)
         printf("Error in Enabling Interrupt: %d", result);
         return E_UNINITIALIZED;
     }
-
     while (1) {
         if (key_pressed == 1) {
             key = &keys.key0;

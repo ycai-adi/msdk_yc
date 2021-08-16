@@ -105,7 +105,6 @@ void delay_us(unsigned int usec)
 /******************************************************************************/
 int main(void)
 {
-    int ret_val = E_NO_ERROR;
     maxusb_cfg_options_t usb_opts;
 
     printf("\n\n***** " TOSTRING(TARGET) " USB CDC-ACM Example *****\n");
@@ -124,19 +123,17 @@ int main(void)
     usb_opts.shutdown_callback = usbShutdownCallback;
 
     /* Initialize the usb module */
-    ret_val = MXC_USB_Init(&usb_opts);
-    if (ret_val != E_NO_ERROR) {
+    if (MXC_USB_Init(&usb_opts) != 0) {
         printf("MXC_USB_Init() failed\n");
         
-        return ret_val;
+        while (1);
     }
 
     /* Initialize the enumeration module */
-    ret_val = enum_init();
-    if (ret_val != E_NO_ERROR) {
+    if (enum_init() != 0) {
         printf("enum_init() failed\n");
         
-        return ret_val;
+        while (1);
     }
 
     /* Register enumeration data */
@@ -154,11 +151,10 @@ int main(void)
     enum_register_callback(ENUM_CLRFEATURE, clrfeatureCallback, NULL);
 
     /* Initialize the class driver */
-    ret_val = acm_init(&config_descriptor.comm_interface_descriptor);
-    if (ret_val != E_NO_ERROR) {
+    if (acm_init(&config_descriptor.comm_interface_descriptor) != 0) {
         printf("acm_init() failed\n");
         
-        return ret_val;
+        while (1);
     }
 
     /* Register callbacks */
@@ -207,8 +203,6 @@ int main(void)
             }
         }
     }
-
-    return ret_val;
 }
 
 /* This callback is used to allow the driver to call part specific initialization functions. */
