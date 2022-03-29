@@ -260,24 +260,24 @@ int AES256_ECB_dec(void)
 // *****************************************************************************
 int main(void)
 {
-    printf("\n***** AES Example *****\n");
+	printf("\n***** AES Example *****\n");
 
-    int fail = 0;
+	int fail = 0;
 
-    //ECB
-    fail += AES128_ECB_enc();
-    fail += AES128_ECB_dec();
-    fail += AES192_ECB_enc();
-    fail += AES192_ECB_dec();
-    fail += AES256_ECB_enc();
-    fail += AES256_ECB_dec();
+	//ECB
+	fail += AES128_ECB_enc();
+	fail += AES128_ECB_dec();
+	fail += AES192_ECB_enc();
+	fail += AES192_ECB_dec();
+	fail += AES256_ECB_enc();
+	fail += AES256_ECB_dec();
 
-    printf("\n");
-    if (fail == 0) {
-        printf("Example Succeeded\n");
-    } else {
-        printf("Example Failed\n");
-    }
-    while (1) {
-    }
+	printf("\n");
+	if(fail == 0) {
+		printf("Example Succeeded\n");
+	} else {
+		printf("Example Failed\n");
+	}
+    
+    return fail;
 }

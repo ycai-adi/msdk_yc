@@ -568,4 +568,6 @@ int main(void)
     } else {
         printf("%d Operations FAILED!\n", errCnt);
     }
+
+    return errCnt;
 }

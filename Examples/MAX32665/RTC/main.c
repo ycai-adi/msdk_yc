@@ -55,6 +55,10 @@
 #include "pb.h"
 
 /***** Definitions *****/
+#ifndef MAX_LOOP_COUNTER
+  #define MAX_LOOP_COUNTER 0  /* Use 0 for an infinite loop. */
+#endif
+
 #define LED_ALARM 0
 
 #define TIME_OF_DAY_SEC  5
@@ -160,6 +164,8 @@ void printTime()
 // *****************************************************************************
 int main(void)
 {
+    int ret_val = E_NO_ERROR;
+
     printf("\n*************************** RTC Example ****************************\n\n");
     printf("The RTC is enabled and the sub-second alarm set to trigger every %d ms.\n",
            SUBSECOND_MSEC_0);
@@ -180,27 +186,28 @@ int main(void)
 
     /* Turn LED off initially */
     LED_Off(LED_ALARM);
-
-    if (MXC_RTC_Init(0, 0) != E_NO_ERROR) {
+    
+    ret_val = MXC_RTC_Init(0, 0);
+    if (ret_val != E_NO_ERROR) {
         printf("Failed RTC Initialization\n");
         printf("Example Failed\n");
-        while (1)
-            ;
+        return ret_val;
     }
 
     printf("RTC started\n");
     printTime();
+    
+    ret_val = MXC_RTC_DisableInt(MXC_RTC_INT_EN_LONG);
+    if (ret_val == E_BUSY) {
+        return ret_val;
+     }
 
-    if (MXC_RTC_DisableInt(MXC_RTC_INT_EN_LONG) == E_BUSY) {
-        return E_BUSY;
-    }
-
-    if (MXC_RTC_SetTimeofdayAlarm(TIME_OF_DAY_SEC) != E_NO_ERROR) {
+    ret_val = MXC_RTC_SetTimeofdayAlarm(TIME_OF_DAY_SEC);
+    if (ret_val != E_NO_ERROR) {
         printf("Failed RTC_SetTimeofdayAlarm\n");
         printf("Example Failed\n");
-        while (1)
-            ;
-    }
+        return ret_val;
+     }
 
     if (MXC_RTC_EnableInt(MXC_RTC_INT_EN_LONG) == E_BUSY) {
         return E_BUSY;
@@ -210,11 +217,11 @@ int main(void)
         return E_BUSY;
     }
 
-    if (MXC_RTC_SetSubsecondAlarm(MSEC_TO_RSSA(SUBSECOND_MSEC_0)) != E_NO_ERROR) {
+    ret_val == MXC_RTC_SetSubsecondAlarm(MSEC_TO_RSSA(SUBSECOND_MSEC_0));
+    if (ret_val != E_NO_ERROR) {
         printf("Failed RTC_SetSubsecondAlarm\n");
         printf("Example Failed\n");
-        while (1)
-            ;
+        return ret_val;
     }
 
     if (MXC_RTC_EnableInt(MXC_RTC_INT_EN_SHORT) == E_BUSY) {
@@ -225,14 +232,18 @@ int main(void)
         return E_BUSY;
     }
 
-    if (MXC_RTC_Start() != E_NO_ERROR) {
+    ret_val = MXC_RTC_Start();
+    if (ret_val != E_NO_ERROR) {
         printf("Failed RTC_Start\n");
         printf("Example Failed\n");
-        while (1)
-            ;
+        return ret_val;
     }
-
-    while (1) {
+    
+#if(MAX_LOOP_COUNTER == 0)
+	while (1) {
+#else
+	for (int i = 0; i < MAX_LOOP_COUNTER; i++) {
+#endif
         if (buttonPressed) {
             /* Show the time elapsed. */
             printTime();
@@ -242,4 +253,6 @@ int main(void)
             buttonPressed = 0;
         }
     }
+
+    return ret_val;
 }

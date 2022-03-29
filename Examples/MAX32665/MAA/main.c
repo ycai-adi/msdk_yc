@@ -100,37 +100,35 @@ int verify(int* result)
 // *****************************************************************************
 int main(void)
 {
-    printf("\n***** MAA Example *****\n");
+	printf("\n***** MAA Example *****\n");
 
-    int result[ARR_SIZE];
-    int len = 127;
-    int retval, i, j;
-    int fail = 0;
+	int result[ARR_SIZE];
+	int len = 127;
+	int retval, i, j;
+	int fail = 0;
 
-    retval = MXC_TPU_MAA_Init(len);
-    if (retval != E_SUCCESS) {
-        printf("Failed MAA_Init().\n");
-        printf("Example Failed\n");
-        while (1)
-            ;
-    }
+	retval = MXC_TPU_MAA_Init(len);
+	if (retval != E_SUCCESS) {
+		printf("Failed MAA_Init().\n");
+		printf("Example Failed\n");
+		return retval;
+	}
 
-    len = findLength(len);
+	len = findLength(len);
 
-    retval = MXC_TPU_MAA_Compute(MXC_TPU_MAA_EXP, multiplier_data, multiplicand_data, exponent_data,
-                                 modulus_data, result, len);
-    if (retval != E_SUCCESS) {
-        printf("Failed MAA_Compute().\n");
-        printf("Example Failed\n");
-        while (1)
-            ;
-    }
+	retval = MXC_TPU_MAA_Compute(MXC_TPU_MAA_EXP, multiplier_data, multiplicand_data,
+                                 exponent_data, modulus_data, result, len);
+	if (retval != E_SUCCESS) {
+		printf("Failed MAA_Compute().\n");
+		printf("Example Failed\n");
+		return retval;
+	}
 
-    //Fit into four byte array
-    printf("Computed:\n");
-    for (i = 0; i < len / 4; ++i) {
-        printf("result[%d] = 0x%x\n", i, *(result + i));
-    }
+	//Fit into four byte array
+	printf("Computed:\n");
+	for (i = 0; i < len / 4; ++i) {
+		printf("result[%d] = 0x%x\n", i, *(result+i));
+	}
 
     //Print out expected array to compare to calculated result
     printf("\nExpected:\n");
@@ -151,6 +149,5 @@ int main(void)
         printf("Example Failed\n");
     }
 
-    while (1) {
-    }
+    return fail;
 }

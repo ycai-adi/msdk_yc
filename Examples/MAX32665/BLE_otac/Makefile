@@ -53,9 +53,13 @@ ifeq "$(BOARD)" ""
 BOARD=EvKit_V1
 endif
 
+ifeq "$(EXAMPLE_ROOT_DIR)" ""
+EXAMPLE_ROOT_DIR=./
+endif
+
 # This is the path to the CMSIS root directory
 ifeq "$(MAXIM_PATH)" ""
-LIBS_DIR=../../../Libraries
+LIBS_DIR=$(EXAMPLE_ROOT_DIR)/../../../Libraries
 else
 LIBS_DIR=/$(subst \,/,$(subst :,,$(MAXIM_PATH))/Libraries)
 endif
@@ -71,17 +75,17 @@ CMSIS_ROOT=$(LIBS_DIR)/CMSIS
 export CMSIS_ROOT
 
 # Source files for this test (add path to VPATH below)
-SRCS  = main.c
+SRCS += main.c
 SRCS += datc_main.c
 SRCS += stack_datc.c
 #SRCS += sla_header.c
 
 # Where to find source files for this test
-VPATH=.
+VPATH+=$(EXAMPLE_ROOT_DIR)
 VPATH += $(CMSIS_ROOT)/Device/Maxim/$(TARGET_UC)/Source
 
 # Where to find header files for this test
-IPATH = .
+IPATH += $(EXAMPLE_ROOT_DIR)
 
 PROJ_CFLAGS = 
 
@@ -114,7 +118,7 @@ PROJ_CFLAGS+=-Wall
 # LINKERFILE=$(CMSIS_ROOT)/Device/Maxim/$(TARGET_UC)/Source/GCC/$(LINKER)
 
 # Build directory for image that peer will be updated with
-FW_UPDATE_DIR=../BLE_otas
+FW_UPDATE_DIR=$(EXAMPLE_ROOT_DIR)/../BLE_otas
 
 # Firmware update files, do not rename
 FW_UPDATE_BIN=fw_update.bin

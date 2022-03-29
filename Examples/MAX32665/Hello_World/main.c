@@ -48,6 +48,10 @@
 
 /***** Definitions *****/
 
+#ifndef MAX_LOOP_COUNTER
+  #define MAX_LOOP_COUNTER 0  /* Use 0 for an infinite loop. */
+#endif
+
 /***** Globals *****/
 
 /***** Functions *****/
@@ -59,7 +63,11 @@ int main(void)
     printf("\n***********Hello World!***********\n");
     printf("\nLED0 toggles every 500 ms\n");
 
-    while (1) {
+#if(MAX_LOOP_COUNTER == 0)
+    while(1) {
+#else
+    for(int i = 0; i < MAX_LOOP_COUNTER; i++) {
+#endif
         LED_On(0);
         MXC_Delay(500000);
         LED_Off(0);

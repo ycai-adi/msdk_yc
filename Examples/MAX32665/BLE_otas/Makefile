@@ -53,9 +53,13 @@ ifeq "$(BOARD)" ""
 BOARD=EvKit_V1
 endif
 
+ifeq "$(EXAMPLE_ROOT_DIR)" ""
+EXAMPLE_ROOT_DIR=./
+endif
+
 # This is the path to the CMSIS root directory
 ifeq "$(MAXIM_PATH)" ""
-LIBS_DIR=../../../Libraries
+LIBS_DIR=$(EXAMPLE_ROOT_DIR)/../../../Libraries
 else
 LIBS_DIR=/$(subst \,/,$(subst :,,$(MAXIM_PATH))/Libraries)
 endif
@@ -71,18 +75,18 @@ CMSIS_ROOT=$(LIBS_DIR)/CMSIS
 export CMSIS_ROOT
 
 # Source files for this test (add path to VPATH below)
-SRCS  = main.c
+SRCS += main.c
 SRCS += dats_main.c
 SRCS += stack_dats.c
 SRCS += wdxs_file.c
 #SRCS += sla_header.c
 
 # Where to find source files for this test
-VPATH=.
+VPATH+=$(EXAMPLE_ROOT_DIR)
 VPATH += $(CMSIS_ROOT)/Device/Maxim/$(TARGET_UC)/Source
 
 # Where to find header files for this test
-IPATH = .
+IPATH += $(EXAMPLE_ROOT_DIR)
 
 PROJ_CFLAGS =
 
@@ -111,7 +115,7 @@ PROJ_CFLAGS+=-Wall
 # MXC_OPTIMIZE_CFLAGS=-O0
 
 # Point this variable to a linker file to override the default file
-LINKERFILE=ota.ld
+LINKERFILE=$(EXAMPLE_ROOT_DIR)/$(TARGET_LC)_ota.ld
 
 ################################################################################
 # Cordio Library Options

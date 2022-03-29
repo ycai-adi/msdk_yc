@@ -53,9 +53,13 @@ ifeq "$(BOARD)" ""
 BOARD=EvKit_V1
 endif
 
+ifeq "$(EXAMPLE_ROOT_DIR)" ""
+EXAMPLE_ROOT_DIR=./
+endif
+
 # This is the path to the CMSIS root directory
 ifeq "$(MAXIM_PATH)" ""
-LIBS_DIR=../../../Libraries
+LIBS_DIR=$(EXAMPLE_ROOT_DIR)/../../../Libraries
 else
 LIBS_DIR=/$(subst \,/,$(subst :,,$(MAXIM_PATH))/Libraries)
 endif
@@ -78,19 +82,19 @@ endif
 export CMSIS_ROOT
 
 # Source files for this test (add path to VPATH below)
-SRCS  = ./src/main.c
-SRCS += ./src/terminal.c
-SRCS += ./src/platform_max32665.c
-SRCS += ./src/bootloader_menu.c
+SRCS += $(EXAMPLE_ROOT_DIR)/src/main.c
+SRCS += $(EXAMPLE_ROOT_DIR)/src/terminal.c
+SRCS += $(EXAMPLE_ROOT_DIR)/src/platform_max32665.c
+SRCS += $(EXAMPLE_ROOT_DIR)/src/bootloader_menu.c
 #
-SRCS += ./bootloader/bootloader.c
+SRCS += $(EXAMPLE_ROOT_DIR)/bootloader/bootloader.c
 # test images
-SRCS += ./test_images/MAX32660/devkey_MAX32660_blinkled_fast_P0_13.c
-SRCS += ./test_images/MAX32660/devkey_MAX32660_blinkled_slow_P0_13.c
-SRCS += ./test_images/MAX32660/nonsecure_MAX32660_blinkled_fast_P0_13.c
-SRCS += ./test_images/MAX32660/nonsecure_MAX32660_blinkled_slow_P0_13.c
-SRCS += ./test_images/MAX32670/devkey_MAX32670_blinkled_P0_22.c
-SRCS += ./test_images/MAX32670/devkey_MAX32670_blinkled_P0_23.c
+SRCS += $(EXAMPLE_ROOT_DIR)/test_images/MAX32660/devkey_MAX32660_blinkled_fast_P0_13.c
+SRCS += $(EXAMPLE_ROOT_DIR)/test_images/MAX32660/devkey_MAX32660_blinkled_slow_P0_13.c
+SRCS += $(EXAMPLE_ROOT_DIR)/test_images/MAX32660/nonsecure_MAX32660_blinkled_fast_P0_13.c
+SRCS += $(EXAMPLE_ROOT_DIR)/test_images/MAX32660/nonsecure_MAX32660_blinkled_slow_P0_13.c
+SRCS += $(EXAMPLE_ROOT_DIR)/test_images/MAX32670/devkey_MAX32670_blinkled_P0_22.c
+SRCS += $(EXAMPLE_ROOT_DIR)/test_images/MAX32670/devkey_MAX32670_blinkled_P0_23.c
 
 
 ifeq ($(filter sla, $(MAKECMDGOALS)), sla)
@@ -98,20 +102,20 @@ SRCS += sla_header.c
 endif
 
 # Where to find source files for this test
-VPATH =.
-VPATH +=./src
-VPATH +=./bootloader
-VPATH +=./test_images/MAX32660
-VPATH +=./test_images/MAX32670
+VPATH+=$(EXAMPLE_ROOT_DIR)
+VPATH +=$(EXAMPLE_ROOT_DIR)/src
+VPATH +=$(EXAMPLE_ROOT_DIR)/bootloader
+VPATH +=$(EXAMPLE_ROOT_DIR)/test_images/MAX32660
+VPATH +=$(EXAMPLE_ROOT_DIR)/test_images/MAX32670
 ifeq ($(filter sla, $(MAKECMDGOALS)), sla)
 VPATH += $(CMSIS_ROOT)/Device/Maxim/$(TARGET_UC)/Source
 endif
 
 # Where to find header files for this test
-IPATH = .
-IPATH += ./inc
-IPATH += ./bootloader
-IPATH += ./test_images
+IPATH += $(EXAMPLE_ROOT_DIR)
+IPATH += $(EXAMPLE_ROOT_DIR)/inc
+IPATH += $(EXAMPLE_ROOT_DIR)/bootloader
+IPATH += $(EXAMPLE_ROOT_DIR)/test_images
 
 # Enable assertion checking for development
 PROJ_CFLAGS+=-DMXC_ASSERT_ENABLE 

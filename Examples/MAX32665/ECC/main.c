@@ -200,8 +200,6 @@ int main(void)
     printf("\n# Passed: %u, # Failed: %u, Test %s\n", test_pass, test_fail,
            test_fail ? "FAIL!" : "Ok");
     printf("Example Complete\n");
-
-    while (1) {
-        ;
-    }
+    
+    return test_fail;
 }

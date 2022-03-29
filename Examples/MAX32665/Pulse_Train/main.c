@@ -50,7 +50,11 @@
 #include "pt.h"
 
 /***** Definitions *****/
-#define ALL_PT 0xFFFF
+#ifndef MAX_LOOP_COUNTER
+  #define MAX_LOOP_COUNTER 0  /* Use 0 for an infinite loop. */
+#endif
+
+#define    ALL_PT    0xFFFF
 /***** Globals *****/
 #define PTG MXC_PTG_BUS0
 
@@ -140,7 +144,13 @@ int main(void)
     //configure and start pulse trains
     ContinuousPulseTrain();
     SquareWave();
-
-    while (1) {
+    
+#if(MAX_LOOP_COUNTER == 0)
+	while (1) {
+#else
+	for (int i = 0; i < MAX_LOOP_COUNTER; i++) {
+#endif
     }
+
+    return 0;
 }
