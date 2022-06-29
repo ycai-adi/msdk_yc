@@ -52,6 +52,10 @@
 
 /***** Definitions *****/
 
+#ifndef MAX_LOOP_COUNTER
+  #define MAX_LOOP_COUNTER 0  /* Use 0 for an infinite loop. */
+#endif
+
 // Parameters for PWM output
 #define PORT_PWM   MXC_GPIO0       //port
 #define PIN_PWM    MXC_GPIO_PIN_14 //pin
@@ -211,7 +215,12 @@ int main(void)
     NVIC_EnableIRQ(TMR4_IRQn);
     OneshotTimer();
 
-    while (1)
-        ;
+#if(MAX_LOOP_COUNTER == 0)
+    while (1) {
+#else
+    for(int i = 0; i < MAX_LOOP_COUNTER; i++) {
+#endif
+    }
+    
     return 0;
 }

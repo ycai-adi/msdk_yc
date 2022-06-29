@@ -166,7 +166,8 @@ int init_hyperbus_ram(int cs)
 /* ************************************************************************** */
 int main(void)
 {
-    void (*func)(void);
+    int retval = E_SUCCESS;
+    void(*func)(void);
     int x;
     void *int_flash_src, *ext_flash_dest;
     uint32_t int_flash_len;
@@ -183,6 +184,7 @@ int main(void)
 
     if (x != E_NO_ERROR) {
         printf("Failed to configure external memory: %d\n", x);
+        return x;
     }
 
     if (HPB_CS == 0) {
@@ -226,9 +228,10 @@ int main(void)
         printf("Returned from external flash\n");
     } else {
         printf("MEMORY MIS-COMPARE!\n");
+        retval = E_INVALID;
     }
 
     printf("\nEND OF LINE.\n");
-    while (1) {
-    }
+    
+    return retval;
 }

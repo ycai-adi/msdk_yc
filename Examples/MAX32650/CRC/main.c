@@ -77,14 +77,16 @@ int main(void)
 {
     printf("\n***** CRC Example *****\n");
 
+    int ret_val = E_NO_ERROR;
     uint8_t data[] = {0x14, 0x78, 0x9C, 0xDE};
     uint8_t len    = sizeof(data) / sizeof(data[0]);
     uint32_t sw_crc;
     uint32_t hw_crc;
 
-    if (MXC_TPU_CRC_Config() != E_SUCCESS) {
+    ret_val = MXC_TPU_CRC_Config();
+    if (ret_val != E_SUCCESS) {
         printf("Failed CRYPTO_Crc_Config()\n");
-        return -1;
+        return ret_val;
     }
 
     printf("CRC16:\n");
@@ -93,9 +95,10 @@ int main(void)
     sw_crc = crc_sw(data, len, MXC_TPU_CRC16);
 
     //Generate hardware result
-    if (MXC_TPU_CRC(data, len, MXC_TPU_CRC16, &hw_crc) != E_SUCCESS) {
+    ret_val = MXC_TPU_CRC(data, len, MXC_TPU_CRC16, &hw_crc);
+    if (ret_val != E_SUCCESS) {
         printf("Failed CRYPTO_CRC()\n");
-        return -1;
+        return ret_val;
     }
 
     printf("Calculated CRC = 0x%08x\n", hw_crc);
@@ -110,9 +113,10 @@ int main(void)
     printf("\n");
 
     //Call CRYPTO_Crc_Config() again to reset
-    if (MXC_TPU_CRC_Config() != E_SUCCESS) {
+    ret_val = MXC_TPU_CRC_Config();
+    if (ret_val != E_SUCCESS) {
         printf("Failed CRYPTO_Crc_Config()\n");
-        return -1;
+        return ret_val;
     }
 
     printf("CRC32:\n");
@@ -121,9 +125,10 @@ int main(void)
     sw_crc = crc_sw(data, len, MXC_TPU_CRC32_ETHERNET);
 
     //Generate hardware result
-    if (MXC_TPU_CRC(data, len, MXC_TPU_CRC32_ETHERNET, &hw_crc) != E_SUCCESS) {
+    ret_val = MXC_TPU_CRC(data, len, MXC_TPU_CRC32_ETHERNET, &hw_crc);
+    if(ret_val != E_SUCCESS) {
         printf("Failed CRYPTO_CRC()\n");
-        return -1;
+        return ret_val;
     }
 
     printf("Calculated CRC = 0x%08x\n", hw_crc);
@@ -131,13 +136,14 @@ int main(void)
 
     if (hw_crc != sw_crc) {
         printf("CRC Failed!\n");
+        ret_val = E_UNKNOWN;
     } else {
         printf("CRC Passed!\n");
+        ret_val = E_NO_ERROR;
     }
     printf("\n");
 
     printf("Example complete.\n");
 
-    while (1) {
-    }
+    return ret_val;
 }

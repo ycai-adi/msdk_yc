@@ -57,6 +57,10 @@
 volatile unsigned int adc_done = 0;
 #endif
 
+#ifndef MAX_LOOP_COUNTER
+  #define MAX_LOOP_COUNTER 0  /* Use 0 for an infinite loop. */
+#endif
+
 static uint16_t adc_val;
 
 /***** Functions *****/
@@ -75,16 +79,15 @@ void ADC_IRQHandler(void)
 
 int main(void)
 {
-    // unsigned int overflow;
-
+    int ret_val = E_NO_ERROR;
+    
     printf("\n***** ADC Example ***** \n");
 
     /* Initialize ADC */
-    if (MXC_ADC_Init() != E_NO_ERROR) {
+    ret_val = MXC_ADC_Init();
+    if (ret_val != E_NO_ERROR) {
         printf("Error Bad Parameter\n");
-
-        while (1)
-            ;
+        return ret_val;
     }
 
     /* Set up LIMIT0 to monitor high and low trip points */
@@ -98,8 +101,12 @@ int main(void)
 #ifdef USE_INTERRUPTS
     NVIC_EnableIRQ(ADC_IRQn);
 #endif
-
+    
+#if(MAX_LOOP_COUNTER == 0)
     while (1) {
+#else
+    for (int i = 0; i < MAX_LOOP_COUNTER; i++) {
+#endif
         /* Flash LED when starting ADC cycle */
         LED_On(1);
         MXC_Delay(MXC_DELAY_MSEC(10));
@@ -138,4 +145,9 @@ int main(void)
         /* Delay for 1/4 second before next reading */
         MXC_Delay(MXC_DELAY_MSEC(1000));
     }
+
+#if(MAX_LOOP_COUNTER)
+    return ret_val;
+#endif
+
 }

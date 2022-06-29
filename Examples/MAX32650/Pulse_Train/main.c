@@ -50,7 +50,12 @@
 #include "pt.h"
 
 /***** Definitions *****/
-#define ALL_PT 0xFFFF
+
+#ifndef MAX_LOOP_COUNTER
+  #define MAX_LOOP_COUNTER 0  /* Use 0 for an infinite loop. */
+#endif
+
+#define    ALL_PT    0xFFFF
 /***** Globals *****/
 #define PTG MXC_PTG
 
@@ -83,8 +88,9 @@ void PT_IRQHandler(void)
 }
 
 // *****************************************************************************
-void ContinuousPulseTrain(void)
+int ContinuousPulseTrain(void)
 {
+    int ret_val = E_NO_ERROR;
     //Setup GPIO to PT output function
     //GPIO P2.28 uses PT14
 
@@ -97,23 +103,30 @@ void ContinuousPulseTrain(void)
     ptConfig.loop         = 0; //continuous loop
     ptConfig.loopDelay    = 0;
     ptConfig.outputSelect = 0;
-
-    MXC_PT_Config(PTG, &ptConfig);
+    
+    ret_val = (PTG, &ptConfig);
+    
+    return ret_val;
 }
 
 // *****************************************************************************
-void SquareWave(void)
+int SquareWave(void)
 {
+    int ret_val = E_NO_ERROR;
     //Setup GPIO to PT output function
     //GPIO P0.23 uses PT15
+    
+    uint32_t freq = 10;                               //Hz
+    ret_val = MXC_PT_SqrWaveConfig(PTG, 15, freq, 0); //PT15
 
-    uint32_t freq = 10;                     //Hz
-    MXC_PT_SqrWaveConfig(PTG, 15, freq, 0); //PT15
+    return ret_val;
 }
 
 // *****************************************************************************
 int main(void)
 {
+    int ret_val = E_NO_ERROR;
+    
     printf("\n*************** Pulse Train Demo ****************\n");
     printf("\nPlease make the following connections: P2.28->P2.25 and P0.23->P2.26\n");
     printf("LED0 = Outputs continuous pattern of 10110b at 2bps\n");
@@ -128,9 +141,15 @@ int main(void)
     MXC_PT_Init(PTG, MXC_PT_CLK_DIV1); //initialize pulse trains
 
     //configure and start pulse trains
-    ContinuousPulseTrain();
-    SquareWave();
-
+    ret_val = ContinuousPulseTrain();
+    ret_val += SquareWave();
+    
+#if(MAX_LOOP_COUNTER == 0)
     while (1) {
+#else
+    for (int i = 0; i < MAX_LOOP_COUNTER; i++) {
+#endif
     }
+
+    return ret_val;
 }

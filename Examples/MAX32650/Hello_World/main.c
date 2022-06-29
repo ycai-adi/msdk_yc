@@ -46,6 +46,9 @@
 #include "mxc_assert.h"
 
 /* **** Definitions **** */
+#ifndef MAX_LOOP_COUNTER
+  #define MAX_LOOP_COUNTER 0  /* Use 0 for an infinite loop. */
+#endif
 
 /* **** Globals **** */
 
@@ -59,11 +62,19 @@ int main(void)
     printf("\n\n\n");
     printf("**********Hello World Example**********\n");
 
+#if(MAX_LOOP_COUNTER == 0)
     while (1) {
+#else
+    for (int i = 0; i < MAX_LOOP_COUNTER; i++) {
+#endif
         LED_On(0);
         MXC_Delay(MXC_DELAY_MSEC(500));
         LED_Off(0);
         MXC_Delay(MXC_DELAY_MSEC(500));
         printf("count = %d\n", count++);
     }
+
+#if(MAX_LOOP_COUNTER)
+    return 0;
+#endif
 }

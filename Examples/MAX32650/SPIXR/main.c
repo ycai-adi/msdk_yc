@@ -110,10 +110,11 @@ void setup(void)
 // *****************************************************************************
 int main(void)
 {
+    int retval = E_NO_ERROR;
     // Defining Variable(s) to write & store data to RAM
-    uint8_t write_buffer[BUFFER_SIZE], read_buffer[BUFFER_SIZE];
-    uint8_t* address = (uint8_t*)A1024_ADDRESS;
-    ; /* Variable to store address of RAM */
+    uint8_t write_buffer[BUFFER_SIZE] = {0};
+    uint8_t read_buffer[BUFFER_SIZE] = {0};
+    uint8_t *address = (uint8_t*) A1024_ADDRESS;
     int temp, i;
 
     printf("\n***** SPIXR Example communicating with RAM in SPI Quad Mode *****\n");
@@ -141,6 +142,7 @@ int main(void)
     // Verify data being read from RAM
     if (memcmp(write_buffer, read_buffer, BUFFER_SIZE)) {
         printf("Data is not verified.\n\n");
+        retval = E_UNKNOWN;
     } else {
         printf("Data is verified.\n\n");
     }
@@ -148,6 +150,5 @@ int main(void)
     // Disable the SPIXR
     MXC_SPIXR_Disable();
 
-    while (1) {
-    }
+    return retval;
 }

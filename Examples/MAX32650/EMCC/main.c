@@ -125,7 +125,8 @@ void stop_timer(void)
     MXC_RTC_Stop();
 }
 
-void test_function(void)
+
+int test_function(void)
 {
     // Defining Variable(s) to write & store data to RAM
     uint8_t write_buffer[BUFFER_SIZE], read_buffer[BUFFER_SIZE];
@@ -155,31 +156,35 @@ void test_function(void)
         // Verify data being read from RAM
         if (memcmp(write_buffer, read_buffer, BUFFER_SIZE)) {
             printf("FAILED: Data was not read properly.\n\n");
-            break;
+            return E_UNKNOWN;
         }
     }
     stop_timer();
 
     // Disable the SPID
     MXC_SPIXR_Disable();
+
+    return E_SUCCESS;
 }
 
 // *****************************************************************************
 int main(void)
 {
+    int retval = E_NO_ERROR;
+
     printf("***** EMCC Example *****\n\n");
 
     //Instruction cache enabled
     printf("Running test reads with data cache enabled.   ");
     MXC_EMCC_Enable();
-    test_function();
+    retval = test_function();
 
     //Instruction cache disabled
     printf("Running test reads with data cache disabled.  ");
     MXC_EMCC_Disable();
-    test_function();
+    retval += test_function();
 
     printf("Example complete.\n");
-    while (1) {
-    }
+
+    return retval;
 }

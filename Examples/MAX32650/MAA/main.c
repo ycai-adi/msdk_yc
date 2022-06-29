@@ -149,6 +149,6 @@ int main(void)
     }
 
     printf("\nExample complete.\n");
-    while (1) {
-    }
+    
+    return 0;
 }

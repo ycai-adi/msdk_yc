@@ -53,9 +53,13 @@ ifeq "$(BOARD)" ""
 BOARD=EvKit_V1
 endif
 
+ifeq "$(EXAMPLE_ROOT_DIR)" ""
+EXAMPLE_ROOT_DIR=./
+endif
+
 # This is the path to the CMSIS root directory
 ifeq "$(MAXIM_PATH)" ""
-LIBS_DIR=../../../Libraries
+LIBS_DIR=$(EXAMPLE_ROOT_DIR)/../../../Libraries
 else
 LIBS_DIR=/$(subst \,/,$(subst :,,$(MAXIM_PATH))/Libraries)
 endif
@@ -78,7 +82,7 @@ endif
 export CMSIS_ROOT
 
 # Source files for this test (add path to VPATH below)
-SRCS  = main.c
+SRCS += main.c
 SRCS += FreeRTOS_CLI.c
 SRCS += CLI-commands.c
 SRCS += freertos_tickless.c
@@ -86,11 +90,11 @@ ifeq ($(filter sla, $(MAKECMDGOALS)), sla)
 SRCS += sla_header.c
 endif
 # Where to find source files for this test
-VPATH = .
+VPATH += $(EXAMPLE_ROOT_DIR)
 VPATH += $(CMSIS_ROOT)/Device/Maxim/$(TARGET_UC)/Source
 
 # Where to find header files for this test
-IPATH = .
+IPATH += $(EXAMPLE_ROOT_DIR)
 
 # Enable assertion checking for development
 PROJ_CFLAGS+=-DMXC_ASSERT_ENABLE
@@ -137,7 +141,7 @@ include $(PERIPH_DRIVER_DIR)/periphdriver.mk
 export PERIPH_DRIVER_DIR
 
 # Include the FreeRTOS library, and specify a local FreeRTOSConfig.h file
-RTOS_CONFIG_DIR=.
+RTOS_CONFIG_DIR=$(EXAMPLE_ROOT_DIR)
 RTOS_DIR=$(LIBS_DIR)/FreeRTOS
 include $(RTOS_DIR)/freertos.mk
 # Include the FreeRTOS-Plus-CLI (please read license file before using commercially)

@@ -127,10 +127,7 @@ int main()
 
     if ((err = MXC_I2S_Shutdown()) != E_NO_ERROR) {
         printf("Could not shut down I2S driver: %d\n", err);
-        while (1) {
-        }
     }
 
-    while (1)
-        ;
+    return err;
 }

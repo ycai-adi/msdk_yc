@@ -187,5 +187,5 @@ int main(void)
     } else {
         printf("Example Failed\n\n");
     }
-    return 0;
+    return fail;
 }

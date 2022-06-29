@@ -53,8 +53,6 @@
 #define I2C_MASTER MXC_I2C1 // SDA P2_17; SCL P2_18
 #define I2C_FREQ   100000   // 100kHZ
 
-typedef enum { FAILED, PASSED } test_t;
-
 /***** Globals *****/
 uint8_t counter = 0;
 
@@ -65,14 +63,14 @@ int main()
     printf("\nThis example finds the addresses of any I2C Slave devices connected to the");
     printf("\nsame bus as I2C1 (SDA - P2.17, SCL - P2.18). You must connect the pull-up");
     printf("\njumpers (JP4 and JP6) to the proper I/O voltage.");
-
-    int error;
-
+    
+    int error = E_SUCCESS;
+    
     //Setup the I2CM
     error = MXC_I2C_Init(I2C_MASTER, 1, 0);
     if (error != E_NO_ERROR) {
         printf("-->Failed master\n");
-        return FAILED;
+        return error;
     } else {
         printf("\n-->I2C Master Initialization Complete\n");
     }
@@ -101,4 +99,10 @@ int main()
     }
 
     printf("\n-->Scan finished. %d devices found\n", counter);
+
+    if (counter == 0) {
+        error = E_UNKNOWN;
+    }
+
+    return error;
 }
