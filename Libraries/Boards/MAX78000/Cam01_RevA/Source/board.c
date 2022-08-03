@@ -44,6 +44,7 @@
 #include "mxc_sys.h"
 #include "lpgcr_regs.h"
 #include "simo_regs.h"
+#include "mxc_delay.h"
 
 /***** Global Variables *****/
 mxc_uart_regs_t* ConsoleUart = MXC_UART_GET_UART(CONSOLE_UART);
@@ -137,18 +138,18 @@ int Board_Init(void)
     MXC_SYS_ClockEnable(MXC_SYS_PERIPH_CLOCK_GPIO0);
     MXC_SYS_ClockEnable(MXC_SYS_PERIPH_CLOCK_GPIO1);
     MXC_SYS_ClockEnable(MXC_SYS_PERIPH_CLOCK_GPIO2);
-  /*
+  
     if ((err = Console_Init()) < E_NO_ERROR) {        
         return err;
-    }*/
+    }
     
     // Set UART 0 pads to 3.3V
     ///MXC_GPIO0->vssel |= (0xF << 0);
-  /*
+  
     if ((err = LED_Init()) != E_NO_ERROR) {
         MXC_ASSERT_FAIL();
         return err;
-    }*/
+    }
     
     //MXC_GPIO_OutSet(cam_clksel_pin.port, cam_clksel_pin.mask);
     // Initialize camera 2.8V supply enable GPIO
