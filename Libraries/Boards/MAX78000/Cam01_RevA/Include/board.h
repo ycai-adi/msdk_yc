@@ -53,7 +53,7 @@ extern "C" {
 #endif
 
 #ifndef CONSOLE_BAUD
-#define CONSOLE_BAUD    115200  /// Console baud rate
+#define CONSOLE_BAUD    921600  /// Console baud rate
 #endif
 
 #define SCCB_SCL_PORT   MXC_GPIO0        /// SCCB clock port
