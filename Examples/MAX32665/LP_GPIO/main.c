@@ -69,8 +69,8 @@
 
 #define RUN_VOLTAGE     1000
 
-#define DS_VOLTAGE      810 // average current is 50 uA through VREGI
-// #define DS_VOLTAGE      1000 // average current is 55 uA through VREGI
+// #define DS_VOLTAGE      810 // average current is 45 uA through VREGI
+#define DS_VOLTAGE      1000 // average current is 55 uA through VREGI
 
 /*
  *  Switch the system clock to the HIRC / 4
@@ -134,6 +134,7 @@ void prepForDeepSleep(void)
 
 void recoverFromDeepSleep(void)
 {
+#if 0
     /* Check to see if VCOREA is ready on  */
     if (!(MXC_SIMO->buck_out_ready & MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYC)) {
         /* Wait for VCOREB to be ready */
@@ -148,6 +149,29 @@ void recoverFromDeepSleep(void)
         MXC_SIMO_SetVregO_B(RUN_VOLTAGE);
         while (!(MXC_SIMO->buck_out_ready & MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYB)) {}
     }
+#else
+    /* Raise the VCORE_B voltage */
+    MXC_SIMO_SetVregO_B(RUN_VOLTAGE);
+
+    // Wait for VREGO_B ready to prepare to switch VCORE back to VCOREB
+    while (0u == (MXC_SIMO->buck_out_ready & MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYB)) {}
+
+    // Move VCORE switch back to VCOREB.
+    MXC_MCR->ctrl |= 0x00000002u;
+    MXC_MCR->ctrl &= 0xFFFFFFFBu;
+
+    MXC_MCR->ctrl |= (0x1u << MXC_F_MCR_CTRL_VDDCSWEN_POS) | (0x1u << MXC_F_MCR_CTRL_USBSWEN_N_POS); // 50 uA average current
+
+    // Crash
+    // MXC_MCR->ctrl |= (0x1u << MXC_F_MCR_CTRL_VDDCSWEN_POS);
+    // MXC_MCR->ctrl &= ~MXC_F_MCR_CTRL_USBSWEN_N;
+
+    // Now that we've switched back to VCOREB, make sure the voltage regulators are ready before we continue.
+    while ((MXC_SIMO->buck_out_ready & (MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYA | MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYB | MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYC)) !=
+                                       (MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYA | MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYB | MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYC))
+    {
+    }
+#endif
 
     MXC_LP_ICache0PowerUp();
     MXC_ICC_Enable();
