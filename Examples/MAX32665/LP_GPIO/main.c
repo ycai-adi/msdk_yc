@@ -69,8 +69,8 @@
 
 #define RUN_VOLTAGE     1000
 
-// #define DS_VOLTAGE      810 // average current is 182 through VREGI
-#define DS_VOLTAGE      1000 // average current is 182 uA through VREGI
+#define DS_VOLTAGE      810 // average current is 50 uA through VREGI
+// #define DS_VOLTAGE      1000 // average current is 55 uA through VREGI
 
 /*
  *  Switch the system clock to the HIRC / 4
@@ -184,7 +184,7 @@ int main(void)
 
         // printf("Entering DEEPSLEEP mode.\n");
         LED_On(0); // GPIO pin is low when awake
-        MXC_Delay(MXC_DELAY_MSEC(10));
+        MXC_Delay(MXC_DELAY_MSEC(1));
     
         prepForDeepSleep();
 
