@@ -24,9 +24,13 @@ MCR->ctrl = 0xb
 ## Questions
 
 ### **What is the minimum operating voltages in active and sleep?**
-We're currently using 1.0V in active and 0.81V in sleep mode.
+We're currently using 1.0V in active (VCOREA) and 0.81V (VCOREB) in sleep mode.
+
+1.0V (VCOREA) at full speed is okay. VCOREB not in use in active mode.
+0.85V (VCOREB) in deep sleep.
 
 ### **What is the effect of changing the operating voltage in sleep mode?**
+Conserve power by lowering VCOREB in deep sleep. Do not raise VCOREB voltage unless VCOREA in soft start.
 
 
 ### **Why does the SIMO stop regulating coming into our out of deep sleep?**
@@ -50,3 +54,9 @@ With the USB Switch disabled, we reduce the load on VCOREA, preventing the soft 
 ### **What is the current through VCOREA/B in deep sleep**
 4.0 uA on VCOREA
 10.4 uA on VCOREB.
+
+### Running from slower system clock
+
+### Verify the GPIO pin being used
+
+### Try a different duty cycle for wakeup pin
