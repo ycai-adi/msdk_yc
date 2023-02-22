@@ -63,6 +63,7 @@
 #include "rtc.h"
 #include "uart.h"
 #include "simo.h"
+#include "rtc.h"
 
 /* Shadow register definitions */
 #define MXC_R_SIR_SHR17 *((uint32_t *)(0x40005444))
@@ -71,6 +72,12 @@
 
 // #define DS_VOLTAGE      810 // average current is 45 uA through VREGI
 #define DS_VOLTAGE      1000 // average current is 55 uA through VREGI
+
+void ECC_IRQHandler(void)
+{
+    printf("ECC Error\n");
+    while(1) {}
+}
 
 /*
  *  Switch the system clock to the HIRC / 4
@@ -119,6 +126,9 @@ void prepForDeepSleep(void)
 
     /* Enable VDDCSWEN=1 prior to enter backup/deepsleep mode */
     MXC_MCR->ctrl |= MXC_F_MCR_CTRL_VDDCSWEN;
+
+    // Retain all SRAM
+    MXC_PWRSEQ->lpcn |= MXC_S_PWRSEQ_LPCN_RAMRET_EN3;
 
     static int mcr_ctrl = 0;
     if(!mcr_ctrl) {
@@ -203,6 +213,30 @@ int main(void)
     NVIC_ClearPendingIRQ(MXC_GPIO_GET_IRQ(MXC_GPIO_GET_IDX(pb_pin[0].port)));
     NVIC_EnableIRQ(MXC_GPIO_GET_IRQ(MXC_GPIO_GET_IDX(pb_pin[0].port)));
     MXC_LP_EnableGPIOWakeup((mxc_gpio_cfg_t *)&pb_pin[0]);
+
+    /* Setup RTC */
+    if (MXC_RTC_Init(0, 0) != E_NO_ERROR) {
+        printf("Failed RTC Initialization\n");
+        printf("Example Failed\n");
+        while (1) {}
+    }
+
+    if (MXC_RTC_Start() != E_NO_ERROR) {
+        printf("Failed RTC_Start\n");
+        printf("Example Failed\n");
+        while (1) {}
+    }
+
+    // Clear all ECC Errors -- write-1-to-clear
+    MXC_GCR->ecc_er = (volatile uint32_t)MXC_GCR->ecc_er;
+    MXC_GCR->ecc_ced = (volatile uint32_t)MXC_GCR->ecc_ced;
+
+    // Enable interrupts for ECC errors
+    MXC_GCR->ecc_irqen |= MXC_F_GCR_ECC_IRQEN_SYSRAM0ECCEN | MXC_F_GCR_ECC_IRQEN_SYSRAM1ECCEN |
+                          MXC_F_GCR_ECC_IRQEN_SYSRAM2ECCEN | MXC_F_GCR_ECC_IRQEN_SYSRAM3ECCEN |
+                          MXC_F_GCR_ECC_IRQEN_SYSRAM4ECCEN | MXC_F_GCR_ECC_IRQEN_SYSRAM5ECCEN;
+    NVIC_EnableIRQ(ECC_IRQn);
+
 
     while (1) {
 

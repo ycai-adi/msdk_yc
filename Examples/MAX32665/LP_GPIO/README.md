@@ -31,9 +31,7 @@ We're currently using 1.0V in active and 0.81V in sleep mode.
 
 ### **Why does the SIMO stop regulating coming into our out of deep sleep?**
 This screenshot shows an unregulated period (~500 us) when entering deep sleep. The USB Switch is enabled, causing extra current consumption in deep sleep. Eventually the voltage levels out at a level below the set point.
-
 With the USB Switch enabled, there is excess load on VCOREA in deep sleep. We can see that the voltage dips well below the set point while the SIMO is sleeping, resulting in a large spike when the SIMO wakes up.
-
 It is believed that the SIMO is stuck in soft start while we're in deep sleep. We come out of deep sleep and detect the soft start state, switch the core supply to VCOREB, reducing the load on VCOREA, allowing the SIMO to recharge VCOREA. 
 <p align="center">
   <img width="400" src="./pics/USB_Switch_Enabled.PNG">
@@ -48,3 +46,7 @@ With the USB Switch disabled, we reduce the load on VCOREA, preventing the soft 
 * Channel 1(Yellow) is VCORE_A(VREGO_C)
 * Channel 2(Blue) is VCORE_B(VREGO_B)
 * Channel 4(Green) is indicate active mode when low and sleep mode when high.
+
+### **What is the current through VCOREA/B in deep sleep**
+4.0 uA on VCOREA
+10.4 uA on VCOREB.
