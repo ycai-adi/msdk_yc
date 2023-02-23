@@ -41,6 +41,10 @@
 #include "board.h"
 #include "example_config.h"
 
+#ifndef CONSOLE
+#define CONSOLE
+#endif
+
 #define SERIAL_BUFFER_SIZE 256
 #define CON_BAUD 921600 // UART baudrate used for sending data to PC
 
