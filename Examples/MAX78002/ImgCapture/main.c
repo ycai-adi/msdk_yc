@@ -50,12 +50,14 @@
 #include "uart.h"
 #include "led.h"
 #include "board.h"
+#include "gpio.h"
 
 #include "camera.h"
 #include "cameraif.h"
 #include "dma.h"
 #include "example_config.h"
 #include "cnn_memutils.h"
+#include "aps6404.h"
 
 #ifndef ENABLE_TFT
 #include "console.h"
@@ -268,19 +270,35 @@ cnn_img_data_t stream_img(uint32_t w, uint32_t h, pixformat_t pixel_format, int 
     printf("Starting streaming capture...\n");
     MXC_TMR_SW_Start(MXC_TMR0);
 
-    // 3. Start streaming
-    camera_start_capture_image();
-
     uint8_t *data = NULL;
     int buffer_size = camera_get_stream_buffer_size();
     uint32_t *cnn_addr = img_data.raw; // Hard-coded to Quadrant 0 starting address
+
+    mxc_gpio_cfg_t indicator = {
+        .func = MXC_GPIO_FUNC_OUT,
+        .pad = MXC_GPIO_PAD_NONE,
+        .port = MXC_GPIO1,
+        .mask = MXC_GPIO_PIN_10,
+        .vssel = MXC_GPIO_VSSEL_VDDIOH
+    };
+
+    MXC_GPIO_Config(&indicator);
+    MXC_GPIO_OutSet(indicator.port, indicator.mask);
+
+    int ram_addr = 0;
+
+    // 3. Start streaming
+    camera_start_capture_image();
 
     // 4. Process the incoming stream data.
     while (!camera_is_image_rcv()) {
         if ((data = get_camera_stream_buffer()) !=
             NULL) { // The stream buffer will return 'NULL' until an image row is received.
+            MXC_GPIO_OutToggle(indicator.port, indicator.mask);
             // 5. Unload buffer
-            cnn_addr = write_bytes_to_cnn_sram(data, buffer_size, cnn_addr);
+            // cnn_addr = write_bytes_to_cnn_sram(data, buffer_size, cnn_addr);
+            ram_write_quad(ram_addr, data, buffer_size);
+            ram_addr += buffer_size;
             // 6. Release buffer in time for next row
             release_camera_stream_buffer();
         }
@@ -331,15 +349,16 @@ void transmit_stream_uart(cnn_img_data_t img_data)
         // Console should be ready to receive raw bytes now.
 
         clear_serial_buffer();
-        int transfer_len = SERIAL_BUFFER_SIZE;
         uint32_t *cnn_addr = img_data.raw;
 
+        uint8_t ram_addr = 0;
         // Transfer the bytes out of CNN memory and into the serial buffer, then write.
         // Since the CNN data SRAM is non-contiguous, some pointer manipulation at the
         // quadrant boundaries is required.
-        for (int i = 0; i < img_data.imglen; i += transfer_len) {
-            cnn_addr = read_bytes_from_cnn_sram((uint8_t *)g_serial_buffer, transfer_len, cnn_addr);
-            MXC_UART_WriteBytes(Con_Uart, (uint8_t *)g_serial_buffer, transfer_len);
+        for (int i = 0; i < img_data.imglen; i += SERIAL_BUFFER_SIZE) {
+            // cnn_addr = read_bytes_from_cnn_sram((uint8_t *)g_serial_buffer, transfer_len, cnn_addr);
+            ram_read_quad(ram_addr + i, (uint8_t*)g_serial_buffer, SERIAL_BUFFER_SIZE);
+            MXC_UART_WriteBytes(Con_Uart, (uint8_t *)g_serial_buffer, SERIAL_BUFFER_SIZE);
         }
 
         int elapsed = MXC_TMR_SW_Stop(MXC_TMR0);
@@ -467,7 +486,32 @@ void service_console()
                                               g_app_settings.pixel_format, g_app_settings.dma_mode,
                                               g_app_settings.dma_channel);
 
-#ifdef CAMERA_BAYER
+#if 1
+            printf("Writing to RAM\n");
+            int address = 0;
+            for (int i = 0; i < img_data.imglen; i += IMAGE_XRES) {
+                ram_write_quad(address + i, &img_data.raw[i], IMAGE_XRES);
+            }
+
+            // First, tell the host that we're about to send the image.
+            clear_serial_buffer();
+            snprintf(g_serial_buffer, SERIAL_BUFFER_SIZE,
+                    "*IMG* %s %i %i %i", // Format img info into a string
+                    (uint8_t*)"BAYER", img_data.imglen, img_data.w, img_data.h);
+            send_msg(g_serial_buffer);
+
+            // The console should now be expecting to receive 'imglen' bytes.
+
+            // Since standard image captures are buffered into SRAM, sending them
+            // over the serial port is straightforward...
+            clear_serial_buffer();
+            address = 0;
+            for (int i = 0; i < img_data.imglen; i += SERIAL_BUFFER_SIZE) {
+                ram_read_quad(address + i, (uint8_t*)g_serial_buffer, SERIAL_BUFFER_SIZE);
+                MXC_UART_WriteBytes(Con_Uart, (uint8_t*)g_serial_buffer, SERIAL_BUFFER_SIZE);
+            }
+#else
+#ifdef BAYER
             uint8_t *bayer_data = (uint8_t *)malloc(img_data.w * img_data.h * 2);
             if (bayer_data != NULL) {
                 MXC_TMR_SW_Start(MXC_TMR0);
@@ -497,6 +541,7 @@ void service_console()
             memset(bayer_data, 0, img_data.imglen);
             free(bayer_data);
 #endif
+#endif // if 1
         } else if (cmd == CMD_STREAM) {
             // Perform a streaming image capture with the current camera settings.
             cnn_img_data_t img_data = stream_img(g_app_settings.imgres_w, g_app_settings.imgres_h,
@@ -642,9 +687,7 @@ int main(void)
     /* Enable cache */
     MXC_ICC_Enable(MXC_ICC0);
 
-    /* Set system clock to 100 MHz */
     MXC_SYS_Clock_Select(MXC_SYS_CLOCK_IPO);
-    SystemCoreClockUpdate();
 
 #ifdef CONSOLE
     console_init();
@@ -653,6 +696,14 @@ int main(void)
 #ifdef SD
     sd_mount();
 #endif
+
+    printf("Initializing SRAM...\n");
+    int err = ram_init();
+    if (err) {
+        printf("Failed to initialize SRAM IC with error %i!\n", err);
+    }
+
+    ram_enter_quadmode();
 
     // Initialize DMA and acquire a channel for the camera interface to use
     printf("Initializing DMA\n");
