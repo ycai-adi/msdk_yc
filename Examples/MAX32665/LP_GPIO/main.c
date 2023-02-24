@@ -70,8 +70,7 @@
 
 #define RUN_VOLTAGE     1000
 
-// #define DS_VOLTAGE      810 // average current is 45 uA through VREGI
-#define DS_VOLTAGE      1000 // average current is 55 uA through VREGI
+#define DS_VOLTAGE      850
 
 void ECC_IRQHandler(void)
 {
@@ -147,6 +146,7 @@ void recoverFromDeepSleep(void)
 #if 0
     /* Check to see if VCOREA is ready on  */
     if (!(MXC_SIMO->buck_out_ready & MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYC)) {
+        LED_On(1);
         /* Wait for VCOREB to be ready */
         while (!(MXC_SIMO->buck_out_ready & MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYB)) {}
 
@@ -158,6 +158,7 @@ void recoverFromDeepSleep(void)
         while (!(MXC_SIMO->buck_out_ready & MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYB)) {}
         MXC_SIMO_SetVregO_B(RUN_VOLTAGE);
         while (!(MXC_SIMO->buck_out_ready & MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYB)) {}
+        LED_Off(1);
     }
 #else
     /* Raise the VCORE_B voltage */
@@ -214,6 +215,14 @@ int main(void)
     NVIC_EnableIRQ(MXC_GPIO_GET_IRQ(MXC_GPIO_GET_IDX(pb_pin[0].port)));
     MXC_LP_EnableGPIOWakeup((mxc_gpio_cfg_t *)&pb_pin[0]);
 
+    /* Enable GPIO wakeup */
+    MXC_GPIO_IntConfig((mxc_gpio_cfg_t *)&pb_pin[1], MXC_GPIO_INT_BOTH);
+    MXC_GPIO_EnableInt(pb_pin[1].port, pb_pin[1].mask);
+
+    NVIC_ClearPendingIRQ(MXC_GPIO_GET_IRQ(MXC_GPIO_GET_IDX(pb_pin[1].port)));
+    NVIC_EnableIRQ(MXC_GPIO_GET_IRQ(MXC_GPIO_GET_IDX(pb_pin[1].port)));
+    MXC_LP_EnableGPIOWakeup((mxc_gpio_cfg_t *)&pb_pin[1]);
+
     /* Setup RTC */
     if (MXC_RTC_Init(0, 0) != E_NO_ERROR) {
         printf("Failed RTC Initialization\n");
@@ -237,12 +246,13 @@ int main(void)
                           MXC_F_GCR_ECC_IRQEN_SYSRAM4ECCEN | MXC_F_GCR_ECC_IRQEN_SYSRAM5ECCEN;
     NVIC_EnableIRQ(ECC_IRQn);
 
+    LED_Off(1);
 
     while (1) {
 
         // printf("Entering DEEPSLEEP mode.\n");
         LED_On(0); // GPIO pin is low when awake
-        MXC_Delay(MXC_DELAY_MSEC(1));
+        MXC_Delay(MXC_DELAY_USEC(100));
     
         prepForDeepSleep();
 
