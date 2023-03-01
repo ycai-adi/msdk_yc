@@ -55,15 +55,24 @@ With the USB Switch disabled, we reduce the load on VCOREA, preventing the soft 
 4.0 uA on VCOREA
 10.4 uA on VCOREB.
 
-### Try a different duty cycle for wakeup pin
-Soft start observed more often with two asynchronous wakeup sources.
+### **Try a different duty cycle for wakeup pin**
+Soft start observed more often with two asynchronous wakeup sources. Seems to happen often if we get a wakeup event right as the part enters deep sleep.
 
 
-### Running from slower system clock
+### **Running from slower system clock**
 Causes part to take longer to wakeup. Also will cause VCOREA to dip further when recovering
 from soft start.
 
-### Leaving 7.3728 MHz clock source powered.
+<p align="center">
+  <img width="400" src="./pics/SoftStart_15MHz_clock.jpg">
+</p>
+
+<p align="center">
+  <img width="400" src="./pics/SoftStart_468kHz_clock.jpg">
+</p>
+
+
+### **Leaving 7.3728 MHz clock enabled.**
 No significant different in current consumption while in deep sleep. Significant difference 
 while in active mode.
 
