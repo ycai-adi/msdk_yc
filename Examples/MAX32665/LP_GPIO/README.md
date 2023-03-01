@@ -55,8 +55,24 @@ With the USB Switch disabled, we reduce the load on VCOREA, preventing the soft 
 4.0 uA on VCOREA
 10.4 uA on VCOREB.
 
-### Running from slower system clock
-
-### Verify the GPIO pin being used
-
 ### Try a different duty cycle for wakeup pin
+Soft start observed more often with two asynchronous wakeup sources.
+
+
+### Running from slower system clock
+Causes part to take longer to wakeup. Also will cause VCOREA to dip further when recovering
+from soft start.
+
+### Leaving 7.3728 MHz clock source powered.
+No significant different in current consumption while in deep sleep. Significant difference 
+while in active mode.
+
+```c
+switchToHIRCD4();
+
+MXC_GCR->clkcn |= (MXC_F_GCR_CLKCN_HIRC8M_EN); // 1.674 mA
+// 1.599 mA with this clock source disabled.
+
+while(1) {}
+```
+
