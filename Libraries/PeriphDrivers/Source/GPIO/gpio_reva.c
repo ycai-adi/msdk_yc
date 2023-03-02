@@ -77,7 +77,7 @@ int MXC_GPIO_RevA_IntConfig(const mxc_gpio_cfg_t *cfg, mxc_gpio_int_pol_t pol)
 
     switch (pol) {
     case MXC_GPIO_INT_HIGH:
-        gpio->intpol &= ~cfg->mask;
+        gpio->intpol |= cfg->mask;
         gpio->dualedge &= ~cfg->mask;
         gpio->intmode &= ~cfg->mask;
         break;
@@ -89,7 +89,7 @@ int MXC_GPIO_RevA_IntConfig(const mxc_gpio_cfg_t *cfg, mxc_gpio_int_pol_t pol)
         break;
 
     case MXC_GPIO_INT_LOW: /* MXC_GPIO_INT_LOW */
-        gpio->intpol |= cfg->mask;
+        gpio->intpol &= ~cfg->mask;
         gpio->dualedge &= ~cfg->mask;
         gpio->intmode &= ~cfg->mask;
         break;
@@ -216,4 +216,19 @@ int MXC_GPIO_RevA_SetAF(mxc_gpio_reva_regs_t *port, mxc_gpio_func_t func, uint32
     }
 
     return E_NO_ERROR;
+}
+
+void MXC_GPIO_RevA_SetWakeEn(mxc_gpio_reva_regs_t *port, uint32_t mask)
+{
+    port->wken_set = mask;
+}
+
+void MXC_GPIO_RevA_ClearWakeEn(mxc_gpio_reva_regs_t *port, uint32_t mask)
+{
+    port->wken_clr = mask;
+}
+
+uint32_t MXC_GPIO_RevA_GetWakeEn(mxc_gpio_reva_regs_t *port)
+{
+    return port->wken;
 }
