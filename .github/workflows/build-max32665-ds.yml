@@ -46,12 +46,23 @@ jobs:
           make clean
           make all -j8
           make build/max32665.hex
+          make build/max32665.dasm
+
+          # Save the revision
+          REVISION="`git rev-parse --short HEAD`"
 
           # Archive the build
-          rm -rf archive.zip
-          rm -rf archive
-          mkdir archive
-          cp build/max32665.* archive
-          ls -la archive
-          zip -r archive.zip archive
-          make clean
+          rm -rf archive*
+          mkdir archive-${REVISION}
+          cp build/max32665.* archive-${REVISION}
+          ls -la archive-${REVISION}
+          zip -r archive-${REVISION}.zip archive-${REVISION}
+
+          mv archive-${REVISION}.zip ../../..
+
+      - name: upload-artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: artifact
+          path: artifact*
+          
