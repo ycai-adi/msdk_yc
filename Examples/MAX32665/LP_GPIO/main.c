@@ -31,26 +31,6 @@
  *
  ******************************************************************************/
 
-/*
- * @file    main.c
- * @brief   Demonstrates the various low power modes.
- *
- * @details Iterates through the various low power modes, using either the RTC
- *          alarm or a GPIO to wake from each.  #defines determine which wakeup
- *          source to use.  Once the code is running, you can measure the
- *          current used on the VCORE rail.
- *
- *          The power states shown are:
- *            1. Active mode power with all clocks on
- *            2. Active mode power with peripheral clocks disabled
- *            3. Active mode power with unused RAMs in light sleep mode
- *            4. Active mode power with unused RAMS shut down
- *            5. SLEEP mode
- *            6. BACKGROUND mode
- *            7. DEEPSLEEP mode
- *            8. BACKUP mode
- */
-
 #include <stdio.h>
 #include <stdint.h>
 #include "mxc_device.h"
@@ -143,7 +123,7 @@ void prepForDeepSleep(void)
 
 void recoverFromDeepSleep(void)
 {
-#if 0
+#if 1
     /* Check to see if VCOREA is ready on  */
     if (!(MXC_SIMO->buck_out_ready & MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYC)) {
         LED_On(1);

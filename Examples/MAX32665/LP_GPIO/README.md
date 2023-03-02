@@ -41,7 +41,7 @@ It is believed that the SIMO is stuck in soft start while we're in deep sleep. W
   <img width="400" src="./pics/USB_Switch_Enabled.PNG">
 </p>
 
-With the USB Switch disabled, we reduce the load on VCOREA, preventing the soft start state on VCOREA.
+With the USB Switch disabled, we reduce the load on VCOREA, reducing the probability of the soft start state on VCOREA.
 
 <p align="center">
   <img width="400" src="./pics/USB_Switch_Disabled.PNG">
@@ -50,6 +50,26 @@ With the USB Switch disabled, we reduce the load on VCOREA, preventing the soft 
 * Channel 1(Yellow) is VCORE_A(VREGO_C)
 * Channel 2(Blue) is VCORE_B(VREGO_B)
 * Channel 4(Green) is indicate active mode when low and sleep mode when high.
+
+This condition has also been observed with the USB switch disabled. Seems to occur more frequently when waking up directly after going to deep sleep.
+
+<p align="center">
+  <img width="400" src="./pics/MAX32665_SoftStart_VCOREA_Drop.jpg">
+</p>
+
+* C1: VCOREA
+* C2: VCOREB
+* C3: Logic indicating soft start on VCOREA
+* C4: Logic indicating MCU is awake
+
+<p align="center">
+  <img width="400" src="./pics/MAX32665_SoftStart_VCOREA_Drop2.jpg">
+</p>
+
+* C1: VCOREA
+* C2: VCOREB
+* C3: Interrupt pin 0
+* C4: Interrupt pin 1
 
 ### **What is the current through VCOREA/B in deep sleep**
 4.0 uA on VCOREA
@@ -85,3 +105,19 @@ MXC_GCR->clkcn |= (MXC_F_GCR_CLKCN_HIRC8M_EN); // 1.674 mA
 while(1) {}
 ```
 
+### **What is the soft start bug?**
+
+*	Explanation of the cause of this bug
+*	The conditions required for the bug to surface
+*	If there will be a fix in an upcoming version of silicon
+*	If it can be trimmed out
+*	Recommended board-level hardware fix (if any)
+*	Recommended firmware fix
+
+### **What is the power up failure?**
+*	Explanation of the cause of this bug
+*	The conditions required for the bug to surface
+*	If there will be a fix in an upcoming version of silicon
+*	If it can be trimmed out
+*	Recommended board-level hardware fix (if any)
+*	Recommended firmware fix
