@@ -63,5 +63,6 @@ jobs:
       - name: upload-artifact
         uses: actions/upload-artifact@v3
         with:
+          name: archive
           path: *.zip
           
