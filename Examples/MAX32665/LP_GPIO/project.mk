@@ -16,3 +16,6 @@ SBT=0
 
 # Use the local linker file
 LINKERFILE=lp.ld
+
+PROJ_CFLAGS += -DLP_GPIO=1
+

@@ -76,6 +76,23 @@ void switchToHIRCD4(void)
 }
 
 /*
+ *  Switch the system clock to the HIRC / 128
+ *
+ *  Enable the HIRC, set the divide ration to /128, and disable the 96 MHz oscillator.
+ */
+void switchToHIRCD128(void)
+{
+    MXC_SETFIELD(MXC_GCR->clkcn, MXC_F_GCR_CLKCN_PSC, MXC_S_GCR_CLKCN_PSC_DIV128);
+    MXC_GCR->clkcn |= MXC_F_GCR_CLKCN_HIRC_EN;
+    MXC_SETFIELD(MXC_GCR->clkcn, MXC_F_GCR_CLKCN_CLKSEL, MXC_S_GCR_CLKCN_CLKSEL_HIRC);
+    /* Disable unused clocks */
+    while (!(MXC_GCR->clkcn & MXC_F_GCR_CLKCN_CKRDY)) {}
+    /* Wait for the switch to occur */
+    MXC_GCR->clkcn &= ~(MXC_F_GCR_CLKCN_HIRC96M_EN);
+    SystemCoreClockUpdate();
+}
+
+/*
  *  Switch the system clock to the HIRC96
  *
  *  Enable the HIRC, set the divide ration to /1, and disable the 60 MHz oscillator.
@@ -117,28 +134,62 @@ void prepForDeepSleep(void)
     }
 
     switchToHIRCD4();
+    // switchToHIRCD128();
 
     MXC_SIMO_SetVregO_B(DS_VOLTAGE); /* Reduce VCOREB to 0.81v */
+}
+
+void my_trap(int par)
+{
+    uint32_t    delay;
+    if (par == 1) delay = MXC_DELAY_MSEC(1);
+    else if (par == 2) delay = MXC_DELAY_MSEC(10);
+    else delay = MXC_DELAY_MSEC(100);
+
+    LED_On(1);
+
+    while (1) {
+        LED_On(0);
+        MXC_Delay(delay);
+        LED_Off(0);
+        MXC_Delay(delay);
+    }
 }
 
 void recoverFromDeepSleep(void)
 {
 #if 1
+    uint32_t    tout1=0, tout2=0, tout3=0;
+    #define FOREVER (100000)
+
+
     /* Check to see if VCOREA is ready on  */
     if (!(MXC_SIMO->buck_out_ready & MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYC)) {
-        LED_On(1);
+        // LED_On(1);
         /* Wait for VCOREB to be ready */
-        while (!(MXC_SIMO->buck_out_ready & MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYB)) {}
+        tout1 = 0;
+        while (!(MXC_SIMO->buck_out_ready & MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYB)) {
+            tout1++;
+            if (tout1 > FOREVER) my_trap(1);
+        }
 
         /* Move VCORE switch back to VCOREB */
         MXC_MCR->ctrl = (MXC_MCR->ctrl & ~(MXC_F_MCR_CTRL_VDDCSW)) |
                         (0x1 << MXC_F_MCR_CTRL_VDDCSW_POS);
 
         /* Raise the VCORE_B voltage */
-        while (!(MXC_SIMO->buck_out_ready & MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYB)) {}
+        tout2 = 0;
+        while (!(MXC_SIMO->buck_out_ready & MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYB)) {
+            tout2++;
+            if (tout2 > FOREVER) my_trap(2);
+        }
         MXC_SIMO_SetVregO_B(RUN_VOLTAGE);
-        while (!(MXC_SIMO->buck_out_ready & MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYB)) {}
-        LED_Off(1);
+        tout3 = 0;
+        while (!(MXC_SIMO->buck_out_ready & MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYB)) {
+            tout3++;
+            if (tout3 > FOREVER) my_trap(3);
+        }
+        // LED_Off(1);
     }
 #else
     /* Raise the VCORE_B voltage */
@@ -172,10 +223,15 @@ void recoverFromDeepSleep(void)
 
 int main(void)
 {
+
     printf("\n\n****Low Power Mode GPIO Example****\n\n");
 
     /* Delay before starting to prevent bricks */
     MXC_Delay(MXC_DELAY_SEC(3));
+
+    // /* pre-set OVR bit */
+    // #define OVR_VALUE (1)
+    // MXC_GCR->scon = (MXC_GCR->scon & ~MXC_F_GCR_SCON_OVR) | (OVR_VALUE << MXC_F_GCR_SCON_OVR_POS);
 
     /* Set VREGO_C (VCOREA) at the run voltage */
     MXC_SIMO_SetVregO_C(RUN_VOLTAGE);
