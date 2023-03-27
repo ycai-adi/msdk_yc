@@ -201,6 +201,9 @@ typedef struct {
 #define MXC_V_RTC_CTRL_SQW_SEL_CLKDIV8                 ((uint32_t)0x3UL) /**< CTRL_SQW_SEL_CLKDIV8 Value */
 #define MXC_S_RTC_CTRL_SQW_SEL_CLKDIV8                 (MXC_V_RTC_CTRL_SQW_SEL_CLKDIV8 << MXC_F_RTC_CTRL_SQW_SEL_POS) /**< CTRL_SQW_SEL_CLKDIV8 Setting */
 
+#define MXC_F_RTC_CTRL_ALT_CLK_POS                     13 /**< CTRL_ALT_CLK Position */
+#define MXC_F_RTC_CTRL_ALT_CLK                         ((uint32_t)(0x1UL << MXC_F_RTC_CTRL_ALT_CLK_POS)) /**< CTRL_ALT_CLK Mask */
+
 #define MXC_F_RTC_CTRL_RD_EN_POS                       14 /**< CTRL_RD_EN Position */
 #define MXC_F_RTC_CTRL_RD_EN                           ((uint32_t)(0x1UL << MXC_F_RTC_CTRL_RD_EN_POS)) /**< CTRL_RD_EN Mask */
 

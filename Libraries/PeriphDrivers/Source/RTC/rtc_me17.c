@@ -98,6 +98,32 @@ int MXC_RTC_Init(uint32_t sec, uint16_t ssec)
     return MXC_RTC_RevA_Init((mxc_rtc_reva_regs_t *)MXC_RTC, sec, (ssec & MXC_F_RTC_SSEC_SSEC));
 }
 
+int MXC_RTC_SetClock(mxc_rtc_clk_sel_t clk)
+{
+
+    /* Enable INRO as source for RTC */
+    if(clk == MXC_RTC_CLK_ALT) {
+        MXC_MCR->ctrl |= (0x1 << 2);
+    }
+    MXC_RTC_RevA_Wait_BusyToClear();
+    
+    MXC_RTC->ctrl |= MXC_F_RTC_REVA_CTRL_WR_EN; // Enable Writing...
+
+    MXC_RTC_RevA_Wait_BusyToClear();
+
+    if(clk == MXC_RTC_CLK_ALT) {
+        MXC_RTC->ctrl |= MXC_F_RTC_CTRL_ALT_CLK;
+    } else {
+        MXC_RTC->ctrl &= ~(MXC_F_RTC_CTRL_ALT_CLK);
+    }
+
+    MXC_RTC_RevA_Wait_BusyToClear();
+
+    MXC_RTC->ctrl &= ~MXC_F_RTC_REVA_CTRL_WR_EN; // Prevent Writing...
+
+    return E_SUCCESS;
+}
+
 int MXC_RTC_SquareWaveStart(mxc_rtc_freq_sel_t ft)
 {
     MXC_GPIO_Config(&gpio_cfg_rtcsqw);

@@ -75,6 +75,14 @@ typedef enum {
 } mxc_rtc_freq_sel_t;
 
 /**
+ * Bitmasks for each of the RTC's Clock Source.
+ */
+typedef enum {
+    MXC_RTC_CLK_ERTCO = 0, /**< 32 kHz crystal, ERTCO */
+    MXC_RTC_CLK_ALT = MXC_F_RTC_CTRL_ALT_CLK, /**< Alternate clock, INRO */
+} mxc_rtc_clk_sel_t;
+
+/**
  * @brief     Bitmasks for each of the RTC's interrupt enables.
  */
 typedef enum {
@@ -126,6 +134,13 @@ int MXC_RTC_Stop(void);
  * @retval    returns Success or Fail, see \ref MXC_ERROR_CODES
  */
 int MXC_RTC_Init(uint32_t sec, uint16_t ssec);
+
+/**
+ * @brief     Set the RTC clock source
+ * @param     clk   Clock source selection
+ * @retval    returns Success or Fail, see \ref MXC_ERROR_CODES
+ */
+int MXC_RTC_SetClock(mxc_rtc_clk_sel_t clk);
 
 /**
  * @brief     Allow generation of Square Wave on the SQW pin (Blocking function)
