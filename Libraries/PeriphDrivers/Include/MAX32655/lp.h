@@ -53,6 +53,8 @@
 extern "C" {
 #endif
 
+extern int wfi;
+
 /**
  * @defgroup pwrseq Low Power (LP)
  * @ingroup periphlibs
@@ -73,6 +75,31 @@ typedef enum {
     MXC_LP_IPO = MXC_F_GCR_PM_IPO_PD,
     MXC_LP_IBRO = MXC_F_GCR_PM_IBRO_PD,
 } mxc_lp_cfg_ds_pd_t;
+
+/**
+ * @brief   Enumeration type to select which low power mode to enter if low power
+ *          request approved by the other core.
+ */
+typedef enum {
+    MXC_LP_LPM, ///< Select low power mode
+    MXC_LP_UPM, ///< Select micro-power mode
+    MXC_LP_STANDBY, ///< Select standby mode
+    MXC_LP_BACKUP, ///< Select backup mode
+    MXC_LP_POWERDOWN /// < Select power down mode
+} mxc_lp_modes_t;
+
+/**
+ * @brief   The callback used by the MXC_LP_DualCore_Handler() function.
+ *
+ * This callback routine is used by the MXC_LP_DualCore_Handler() to determine whether
+ * the core is in a state in which it can enter a low power operating mode. The user should
+ * define a function which approves or denies any requests to enter a low power mode from
+ * the other core. Pass this function pointer to MXC_LP_ConfigDualCore() before any LP
+ * requests are issued by the other core. 
+ *
+ * @return  E_NO_ERROR if the core is currently able to enter a low power mode, otherwise E_BAD_STATE. 
+ */
+typedef int (*mxc_lp_dualcore_rdy_t)(void);
 
 /**
  * @brief      Places the device into SLEEP mode.  This function returns once an RTC or external interrupt occur.
@@ -105,6 +132,38 @@ void MXC_LP_EnterBackupMode(void);
  *             Instead, the device will restart once an RTC, USB wakeup, or external interrupt occur.
  */
 void MXC_LP_EnterPowerDownMode(void);
+
+/*
+ * @brief      Function to configure core to be able to send and receive low power requests in applications which use both the
+ *             ARM and RISC-V cores. Call this function in both applications (Arm and RISC-V) before sending Low power requests
+ *             from either core.
+ *
+ * @param      lprdy    Function pointer to the user-defined Low-Power status check function
+ * @param      sema     The semaphore assigned to all LP requests. (Must be the same selection on for both the Arm and RISC-V initializations.)
+ *
+ * @return     E_NO_ERROR if sucessful, otherwise an error code.
+ */
+int MXC_LP_ConfigDualCore(mxc_lp_dualcore_rdy_t lprdy, int sema);
+
+/*
+ * @brief      Send request to other core to enter low power mode.
+ *
+ * @warning    If request approved by the other core, the device will enter the selected low power mode.
+ *
+ * @param      mode  Selects which low power mode to enter if 
+ *
+ * @return     E_NO_ERROR if request approved, an error code otherwise.
+ */
+int MXC_LP_DualCore_Request(mxc_lp_modes_t mode);
+
+/*
+ * @brief      Function to handle low power requests. Call from CM4/RISC-V ISR. This function determines if the interrupt
+ *             was triggered by a low power request, if it determines it was not triggered by a low power request it returns
+ *             an error. If this occurs, call MXC_SEMA_Handler to handle the interrupt or clear it manually. 
+ *
+ * @return     E_NO_ERROR if the interrupt was handled in this function, otherwise an error code.
+ */
+int MXC_LP_DualCore_Handler(void);
 
 /**
  * @brief      Set ovr bits to set the voltage the micro will run at.

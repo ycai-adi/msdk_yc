@@ -30,6 +30,7 @@
  * ownership rights.
  *
  ******************************************************************************/
+#include <stddef.h>
 #include "mxc_device.h"
 #include "mxc_assert.h"
 #include "mxc_sys.h"
@@ -37,6 +38,7 @@
 #include "mcr_regs.h"
 #include "lp.h"
 #include "lpcmp.h"
+#include "sema.h"
 
 #ifndef __riscv
 /* ARM */
@@ -48,6 +50,20 @@
 #define SET_SLEEPDEEP(X)
 #define CLR_SLEEPDEEP(X)
 #endif
+
+#define LP_REQ_CODE 0x00051EE4
+#define WAITING_FOR_RESPONSE 0xA5A5A5A5
+
+typedef struct {
+    mxc_lp_dualcore_rdy_t check_lprdy;
+    int sema;
+    int initiated;
+    int resp;
+    int dualcore_config;
+} mxc_lp_req_state_t;
+
+int wfi = 0;
+static mxc_lp_req_state_t g_lpreq = { NULL, 0, 0, 0, 0 };
 
 void MXC_LP_EnterSleepMode(void)
 {
@@ -117,6 +133,144 @@ void MXC_LP_EnterPowerDownMode(void)
 
     while (1) {}
     // Should never reach this line - device will reset on exit from shutdown mode.
+}
+
+int MXC_LP_ConfigDualCore(mxc_lp_dualcore_rdy_t lprdy, int sema)
+{
+    // Check if this has already been configured
+    if(g_lpreq.dualcore_config) {
+        return E_BAD_STATE;
+    } else if(sema < 0 || sema > MXC_CFG_SEMA_INSTANCES) {
+        return E_INVALID;
+    }
+
+    MXC_SEMA_Init();
+
+    wfi = 0;
+
+    g_lpreq.check_lprdy = lprdy;
+    g_lpreq.initiated = 0;
+    g_lpreq.resp = 0;
+    g_lpreq.sema = sema;
+    g_lpreq.dualcore_config = 1;
+
+    return E_NO_ERROR;
+}
+
+int MXC_LP_DualCore_Request(mxc_lp_modes_t mode)
+{
+    if(mode < MXC_LP_LPM || mode > MXC_LP_POWERDOWN) {
+        return E_BAD_PARAM;
+    } else if(!g_lpreq.dualcore_config) {
+        return E_BAD_STATE;
+    } else if(MXC_SEMA_GetSema(g_lpreq.sema)) {
+        return E_BUSY;
+    }
+
+    g_lpreq.initiated = 1;
+    g_lpreq.resp = WAITING_FOR_RESPONSE;
+
+    // Send Request
+    #ifndef __riscv
+    MXC_SEMA->mail1 = LP_REQ_CODE;
+    MXC_SEMA->irq1 |= MXC_F_SEMA_IRQ1_RV32_IRQ;
+    #else
+    MXC_SEMA->mail0 = LP_REQ_CODE;
+    MXC_SEMA->irq0 |= MXC_F_SEMA_IRQ0_CM4_IRQ;
+    #endif
+
+    // Wait for response
+    while(g_lpreq.resp == WAITING_FOR_RESPONSE) {}
+
+    if(g_lpreq.resp == E_NO_ERROR) {
+        switch(mode) {
+        case MXC_LP_LPM:
+            MXC_LP_EnterLowPowerMode();
+            break;
+        case MXC_LP_UPM:
+            MXC_LP_EnterMicroPowerMode();
+            break;
+        case MXC_LP_STANDBY:
+            MXC_LP_EnterStandbyMode();
+            break;
+        case MXC_LP_BACKUP:
+            MXC_LP_EnterBackupMode();
+            break;
+        case MXC_LP_POWERDOWN:
+            MXC_LP_EnterPowerDownMode();
+            break;
+        default:
+            return E_BAD_PARAM;
+        }
+    } else {
+        return E_BAD_STATE;
+    }
+
+    g_lpreq.initiated = 0;
+    g_lpreq.resp = 0;
+
+    MXC_SEMA_FreeSema(g_lpreq.sema);
+
+    // Wakeup the other core
+    #ifndef __riscv
+    MXC_SEMA->irq1 |= MXC_F_SEMA_IRQ1_RV32_IRQ;
+    #else
+    MXC_SEMA->irq0 |= MXC_F_SEMA_IRQ0_CM4_IRQ;
+    #endif
+
+    return E_NO_ERROR;
+}
+
+#include <stdio.h>
+int MXC_LP_DualCore_Handler(void)
+{
+    uint32_t mail;
+
+    // check semaphore
+    if(MXC_SEMA_CheckSema(g_lpreq.sema) == E_NO_ERROR) {
+        return E_SHUTDOWN;
+    }
+
+    // Clear interrupt and read mail
+    #ifndef __riscv
+    mail = MXC_SEMA->mail0;
+    MXC_SEMA->irq0 &= ~MXC_F_SEMA_IRQ0_CM4_IRQ;
+    #else
+    mail = MXC_SEMA->mail1;
+    MXC_SEMA->irq1 &= ~MXC_F_SEMA_IRQ1_RV32_IRQ;
+    #endif
+
+    if(g_lpreq.initiated) {
+        g_lpreq.resp = mail;
+    } else {
+        // Handle sleep req
+        if(mail == LP_REQ_CODE) {
+            // Call LP status checker if it has been initialized
+            mail = E_BAD_STATE;
+
+            if(g_lpreq.check_lprdy != NULL) {
+                if(g_lpreq.check_lprdy() == E_NO_ERROR) {
+                    mail = E_NO_ERROR;
+                }
+            }
+
+            // Send response to other core
+            #ifndef __riscv
+            MXC_SEMA->mail1 = mail;
+            MXC_SEMA->irq1 |= MXC_F_SEMA_IRQ1_RV32_IRQ;
+            #else
+            MXC_SEMA->mail0 = mail;
+            MXC_SEMA->irq0 |= MXC_F_SEMA_IRQ0_CM4_IRQ;
+            #endif
+
+            // If this core approved the LP request, enter __WFI
+            if(mail == E_NO_ERROR) {
+                wfi = 1;
+            }
+        }
+    }
+
+    return E_NO_ERROR;
 }
 
 void MXC_LP_SetOVR(mxc_lp_ovr_t ovr)
