@@ -243,6 +243,9 @@ typedef struct {
 #define MXC_V_ADC9_FIFO_SMPLIN_INVALID_111             ((uint32_t)0x7UL) /**< FIFO_SMPLIN_INVALID_111 Value */
 #define MXC_S_ADC9_FIFO_SMPLIN_INVALID_111             (MXC_V_ADC9_FIFO_SMPLIN_INVALID_111 << MXC_F_ADC9_FIFO_SMPLIN_POS) /**< FIFO_SMPLIN_INVALID_111 Setting */
 
+#define MXC_F_ADC9_FIFO_INCOMPLETE_POS               (12) /**< ADC_INCOMPLETE Position */
+#define MXC_F_ADC9_FIFO_INCOMPLETE                   ((uint32_t)(0x1 << MXC_F_ADC9_FIFO_INCOMPLETE_POS)) /**< ADC_INCOMPLETE Mask */
+
 /**@} end of group ADC9_FIFO_Register */
 
 /**

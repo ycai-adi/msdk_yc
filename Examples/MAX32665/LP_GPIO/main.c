@@ -31,6 +31,26 @@
  *
  ******************************************************************************/
 
+/*
+ * @file    main.c
+ * @brief   Demonstrates the various low power modes.
+ *
+ * @details Iterates through the various low power modes, using either the RTC
+ *          alarm or a GPIO to wake from each.  #defines determine which wakeup
+ *          source to use.  Once the code is running, you can measure the
+ *          current used on the VCORE rail.
+ *
+ *          The power states shown are:
+ *            1. Active mode power with all clocks on
+ *            2. Active mode power with peripheral clocks disabled
+ *            3. Active mode power with unused RAMs in light sleep mode
+ *            4. Active mode power with unused RAMS shut down
+ *            5. SLEEP mode
+ *            6. BACKGROUND mode
+ *            7. DEEPSLEEP mode
+ *            8. BACKUP mode
+ */
+
 #include <stdio.h>
 #include <stdint.h>
 #include "mxc_device.h"
@@ -43,20 +63,123 @@
 #include "rtc.h"
 #include "uart.h"
 #include "simo.h"
-#include "rtc.h"
+#include "mxc_sys.h"
 
 /* Shadow register definitions */
 #define MXC_R_SIR_SHR17 *((uint32_t *)(0x40005444))
 
-#define RUN_VOLTAGE     1000
+#define DELAY_IN_MSEC 20
+#define USE_CONSOLE 1
 
-#define DS_VOLTAGE      850
+#define USE_BUTTON 0
+#define USE_ALARM 0
+#define USE_GPIO 1
+
+#define DO_SLEEP 0
+#define DO_DEEPSLEEP 1
+#define DO_BACKUP 0
+
+#if (!(USE_BUTTON || USE_ALARM || USE_GPIO))
+#error "You must set either USE_BUTTON or USE_ALARM or USE_GPIO to 1."
+#endif
+#if (USE_BUTTON + USE_ALARM + USE_GPIO > 1 )
+#error "You must select one of USE_BUTTON or USE_ALARM or USE_GPIO, not two or three."
+#endif
+
+#if USE_CONSOLE
+#define PRINT(...) fprintf(stdout, __VA_ARGS__)
+#else
+#define PRINT(...)
+#endif
+
+// *****************************************************************************
 
 void ECC_IRQHandler(void)
 {
-    printf("ECC Error\n");
+    PRINT("ECC Error\n");
     while(1) {}
 }
+
+#if USE_ALARM
+
+volatile int alarmed;
+void alarmHandler(void)
+{
+    int flags = MXC_RTC->ctrl;
+    alarmed = 1;
+
+    if ((flags & MXC_F_RTC_CTRL_ALSF) >> MXC_F_RTC_CTRL_ALSF_POS) {
+        MXC_RTC->ctrl &= ~(MXC_F_RTC_CTRL_ALSF);
+}
+
+    if ((flags & MXC_F_RTC_CTRL_ALDF) >> MXC_F_RTC_CTRL_ALDF_POS) {
+        MXC_RTC->ctrl &= ~(MXC_F_RTC_CTRL_ALDF);
+    }
+}
+
+void setTrigger(int waitForTrigger)
+{
+    alarmed = 0;
+    while (MXC_RTC_Init(0, 0) == E_BUSY) {}
+
+    while (MXC_RTC_DisableInt(MXC_F_RTC_CTRL_ASE) == E_BUSY) {}
+
+    while (MXC_RTC_SetSubsecondAlarm(0xFFFFFFFFUL - (DELAY_IN_MSEC*4096/1000)) == E_BUSY) {}
+
+    while (MXC_RTC_EnableInt(MXC_F_RTC_CTRL_ASE) == E_BUSY) {}
+
+    while (MXC_RTC_Start() == E_BUSY) {}
+
+    if (waitForTrigger) {
+        while (!alarmed) {}
+    }
+
+// Wait for serial transactions to complete.
+#if USE_CONSOLE
+    while (MXC_UART_ReadyForSleep(MXC_UART_GET_UART(CONSOLE_UART)) != E_NO_ERROR) {}
+#endif // USE_CONSOLE
+}
+
+void waitSeconds(int sec)
+{
+    alarmed = 0;
+    while (MXC_RTC_Init(0, 0) == E_BUSY) {}
+    while (MXC_RTC_DisableInt(MXC_F_RTC_CTRL_ADE) == E_BUSY) {}
+    while (MXC_RTC_SetTimeofdayAlarm(sec) == E_BUSY) {}
+    while (MXC_RTC_EnableInt(MXC_F_RTC_CTRL_ADE) == E_BUSY) {}
+    while (MXC_RTC_Start() == E_BUSY) {}
+    while (!alarmed) {}
+}
+
+#endif // USE_ALARM
+
+#if USE_BUTTON
+volatile int buttonPressed = 0;
+void buttonHandler(void *pb)
+{
+    buttonPressed = 1;
+}
+
+void setTrigger(int waitForTrigger)
+{
+    int tmp;
+
+    buttonPressed = 0;
+    if (waitForTrigger) {
+        while (!buttonPressed) {}
+    }
+
+    // Debounce the button press.
+    for (tmp = 0; tmp < 0x800000; tmp++) {
+        __NOP();
+    }
+
+// Wait for serial transactions to complete.
+#if USE_CONSOLE
+    while (MXC_UART_ReadyForSleep(MXC_UART_GET_UART(CONSOLE_UART)) != E_NO_ERROR) {}
+#endif // USE_CONSOLE
+}
+#endif // USE_BUTTON
 
 /*
  *  Switch the system clock to the HIRC / 4
@@ -66,23 +189,6 @@ void ECC_IRQHandler(void)
 void switchToHIRCD4(void)
 {
     MXC_SETFIELD(MXC_GCR->clkcn, MXC_F_GCR_CLKCN_PSC, MXC_S_GCR_CLKCN_PSC_DIV4);
-    MXC_GCR->clkcn |= MXC_F_GCR_CLKCN_HIRC_EN;
-    MXC_SETFIELD(MXC_GCR->clkcn, MXC_F_GCR_CLKCN_CLKSEL, MXC_S_GCR_CLKCN_CLKSEL_HIRC);
-    /* Disable unused clocks */
-    while (!(MXC_GCR->clkcn & MXC_F_GCR_CLKCN_CKRDY)) {}
-    /* Wait for the switch to occur */
-    MXC_GCR->clkcn &= ~(MXC_F_GCR_CLKCN_HIRC96M_EN);
-    SystemCoreClockUpdate();
-}
-
-/*
- *  Switch the system clock to the HIRC / 128
- *
- *  Enable the HIRC, set the divide ration to /128, and disable the 96 MHz oscillator.
- */
-void switchToHIRCD128(void)
-{
-    MXC_SETFIELD(MXC_GCR->clkcn, MXC_F_GCR_CLKCN_PSC, MXC_S_GCR_CLKCN_PSC_DIV128);
     MXC_GCR->clkcn |= MXC_F_GCR_CLKCN_HIRC_EN;
     MXC_SETFIELD(MXC_GCR->clkcn, MXC_F_GCR_CLKCN_CLKSEL, MXC_S_GCR_CLKCN_CLKSEL_HIRC);
     /* Disable unused clocks */
@@ -123,126 +229,143 @@ void prepForDeepSleep(void)
     /* Enable VDDCSWEN=1 prior to enter backup/deepsleep mode */
     MXC_MCR->ctrl |= MXC_F_MCR_CTRL_VDDCSWEN;
 
-    // Retain all SRAM
-    MXC_PWRSEQ->lpcn |= MXC_S_PWRSEQ_LPCN_RAMRET_EN3;
-
-    static int mcr_ctrl = 0;
-    if(!mcr_ctrl) {
-        printf("MCR->ctrl = 0x%x\n", MXC_MCR->ctrl); // 0xB after POR, 0xF after reset
-        MXC_Delay(MXC_DELAY_MSEC(10));
-        mcr_ctrl = 1;
-    }
+	*(volatile int *)0x40005434 = 1;
+	*(volatile int *)0x40005440 = (*(volatile int *)0x40005440 & (~(0x3 << 24))) | (0x2 << 24);
+	*(volatile int *)0x40005444 = (*(volatile int *)0x40005444 & (~(0x3 << 6)))  | (0x2 << 6);
 
     switchToHIRCD4();
-    // switchToHIRCD128();
 
-    MXC_SIMO_SetVregO_B(DS_VOLTAGE); /* Reduce VCOREB to 0.81v */
-}
+    MXC_SIMO_SetVregO_B(810); /* Reduce VCOREB to 0.81v */
 
-void my_trap(int par)
-{
-    uint32_t    delay;
-    if (par == 1) delay = MXC_DELAY_MSEC(1);
-    else if (par == 2) delay = MXC_DELAY_MSEC(10);
-    else delay = MXC_DELAY_MSEC(100);
+    MXC_MCR->ctrl = (MXC_MCR->ctrl & ~(MXC_F_MCR_CTRL_VDDCSW)) | 
+                    (0x2 << MXC_F_MCR_CTRL_VDDCSW_POS);
 
-    LED_On(1);
-
-    while (1) {
-        LED_On(0);
-        MXC_Delay(delay);
-        LED_Off(0);
-        MXC_Delay(delay);
-    }
+    /* Wait for VCOREA ready.  Should be ready already */
+    while (!(MXC_SIMO->buck_out_ready & MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYC)) {}
 }
 
 void recoverFromDeepSleep(void)
 {
-#if 1
-    uint32_t    tout1=0, tout2=0, tout3=0;
-    #define FOREVER (100000)
-
-
+#if !USE_GPIO
+	uint32_t tmp = MXC_MCR->ctrl;
+#endif
     /* Check to see if VCOREA is ready on  */
     if (!(MXC_SIMO->buck_out_ready & MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYC)) {
-        // LED_On(1);
         /* Wait for VCOREB to be ready */
-        tout1 = 0;
-        while (!(MXC_SIMO->buck_out_ready & MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYB)) {
-            tout1++;
-            if (tout1 > FOREVER) my_trap(1);
-        }
+        while (!(MXC_SIMO->buck_out_ready & MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYB)) {}
 
         /* Move VCORE switch back to VCOREB */
         MXC_MCR->ctrl = (MXC_MCR->ctrl & ~(MXC_F_MCR_CTRL_VDDCSW)) |
                         (0x1 << MXC_F_MCR_CTRL_VDDCSW_POS);
 
         /* Raise the VCORE_B voltage */
-        tout2 = 0;
-        while (!(MXC_SIMO->buck_out_ready & MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYB)) {
-            tout2++;
-            if (tout2 > FOREVER) my_trap(2);
+        while (!(MXC_SIMO->buck_out_ready & MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYB)) {}
+        MXC_SIMO_SetVregO_B(1000);
+        while (!(MXC_SIMO->buck_out_ready & MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYB)) {}
         }
-        MXC_SIMO_SetVregO_B(RUN_VOLTAGE);
-        tout3 = 0;
-        while (!(MXC_SIMO->buck_out_ready & MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYB)) {
-            tout3++;
-            if (tout3 > FOREVER) my_trap(3);
-        }
-        // LED_Off(1);
-    }
-#else
-    /* Raise the VCORE_B voltage */
-    MXC_SIMO_SetVregO_B(RUN_VOLTAGE);
-
-    // Wait for VREGO_B ready to prepare to switch VCORE back to VCOREB
-    while (0u == (MXC_SIMO->buck_out_ready & MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYB)) {}
-
-    // Move VCORE switch back to VCOREB.
-    MXC_MCR->ctrl |= 0x00000002u;
-    MXC_MCR->ctrl &= 0xFFFFFFFBu;
-
-    MXC_MCR->ctrl |= (0x1u << MXC_F_MCR_CTRL_VDDCSWEN_POS) | (0x1u << MXC_F_MCR_CTRL_USBSWEN_N_POS); // 50 uA average current
-
-    // Crash
-    // MXC_MCR->ctrl |= (0x1u << MXC_F_MCR_CTRL_VDDCSWEN_POS);
-    // MXC_MCR->ctrl &= ~MXC_F_MCR_CTRL_USBSWEN_N;
-
-    // Now that we've switched back to VCOREB, make sure the voltage regulators are ready before we continue.
-    while ((MXC_SIMO->buck_out_ready & (MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYA | MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYB | MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYC)) !=
-                                       (MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYA | MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYB | MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYC))
-    {
-    }
-#endif
 
     MXC_LP_ICache0PowerUp();
     MXC_ICC_Enable();
 
     switchToHIRC96();
+
+#if !USE_GPIO
+	PRINT("VDDCSW on exit: %08X\n", tmp);
+#endif
 }
 
 int main(void)
 {
 
-    printf("\n\n****Low Power Mode GPIO Example****\n\n");
+#if USE_GPIO & 0
+    // Clear all ECC Errors -- write-1-to-clear
+    MXC_GCR->ecc_er = (volatile uint32_t)MXC_GCR->ecc_er;
+    MXC_GCR->ecc_ced = (volatile uint32_t)MXC_GCR->ecc_ced;
 
-    /* Delay before starting to prevent bricks */
-    MXC_Delay(MXC_DELAY_SEC(3));
+    // Enable interrupts for ECC errors
+    MXC_GCR->ecc_irqen |= MXC_F_GCR_ECC_IRQEN_SYSRAM0ECCEN | MXC_F_GCR_ECC_IRQEN_SYSRAM1ECCEN |
+                          MXC_F_GCR_ECC_IRQEN_SYSRAM2ECCEN | MXC_F_GCR_ECC_IRQEN_SYSRAM3ECCEN |
+                          MXC_F_GCR_ECC_IRQEN_SYSRAM4ECCEN | MXC_F_GCR_ECC_IRQEN_SYSRAM5ECCEN;
+    NVIC_EnableIRQ(ECC_IRQn);
 
-    // /* pre-set OVR bit */
-    // #define OVR_VALUE (1)
-    // MXC_GCR->scon = (MXC_GCR->scon & ~MXC_F_GCR_SCON_OVR) | (OVR_VALUE << MXC_F_GCR_SCON_OVR_POS);
+    /* Enable ECC */
+    MXC_MCR->eccen |= 0x3f;
+#endif
 
-    /* Set VREGO_C (VCOREA) at the run voltage */
-    MXC_SIMO_SetVregO_C(RUN_VOLTAGE);
+    PRINT("\n\n****Low Power Mode Example****\n\n");
+
+#if USE_ALARM
+    PRINT("This code cycles through the MAX32665 power modes, using the RTC alarm to exit from "
+          "each mode.  The modes will change every %d milliseconds.\n\n",
+          DELAY_IN_MSEC);
+    MXC_NVIC_SetVector(RTC_IRQn, alarmHandler);
+#endif // USE_ALARM
+
+#if USE_BUTTON
+    PRINT("This code cycles through the MAX32665 power modes, using a push button 0 to exit from "
+          "each mode and enter the next.\n\n");
+    PB_RegisterCallback(0, (pb_callback)buttonHandler);
+#endif // USE_BUTTON
+
+    PRINT("Running in ACTIVE mode.\n");
+#if !USE_CONSOLE
+    MXC_SYS_ClockDisable(MXC_SYS_PERIPH_CLOCK_UART0);
+#endif // !USE_CONSOLE
+
+
+    MXC_Delay(MXC_DELAY_SEC(5));    /* Delay before starting to prevent bricks */
+
 
     /* Prevent SIMO leakage in DS by reducing the SIMO buck clock */
-    MXC_R_SIR_SHR17 &= ~(0xC0);
+    // MXC_R_SIR_SHR17 &= ~(0xC0);
 
-    /* Disable USB switch */
-    MXC_LP_USBSWLPDisable(); // ~7 uA in DS when switch is disabled
-    // MXC_LP_USBSWLPEnable(); // ~420 uA in DS when switch is enabled
+/*
+    MXC_LP_USBSWLPDisable();
 
+    MXC_LP_ROM0LightSleepEnable();
+    MXC_LP_USBFIFOLightSleepEnable();
+    MXC_LP_CryptoLightSleepEnable();
+    MXC_LP_SRCCLightSleepEnable();
+    MXC_LP_ICacheXIPLightSleepEnable();
+    MXC_LP_ICache1LightSleepEnable();
+    MXC_LP_SysRam5LightSleepEnable();
+    MXC_LP_SysRam4LightSleepEnable();
+    MXC_LP_SysRam3LightSleepEnable();
+    MXC_LP_SysRam2LightSleepEnable();
+    MXC_LP_SysRam1LightSleepDisable();
+    MXC_LP_SysRam0LightSleepDisable(); // Global variables are in RAM0 and RAM1
+
+    PRINT("All unused RAMs placed in LIGHT SLEEP mode.\n");
+    setTrigger(1);
+
+    MXC_LP_ROM0Shutdown();
+    MXC_LP_USBFIFOShutdown();
+    MXC_LP_CryptoShutdown();
+    MXC_LP_SRCCShutdown();
+    MXC_LP_ICacheXIPShutdown();
+    MXC_LP_ICache1Shutdown();
+    MXC_LP_SysRam5Shutdown();
+    MXC_LP_SysRam4Shutdown();
+    MXC_LP_SysRam3Shutdown();
+    MXC_LP_SysRam2Shutdown();
+    MXC_LP_SysRam1PowerUp();
+    MXC_LP_SysRam0PowerUp(); // Global variables are in RAM0 and RAM1
+
+    PRINT("All unused RAMs shutdown.\n");
+
+    setTrigger(1);
+*/
+
+
+#if USE_BUTTON
+    MXC_LP_EnableGPIOWakeup((mxc_gpio_cfg_t *)&pb_pin[0]);
+    MXC_GPIO_SetWakeEn(pb_pin[0].port, pb_pin[0].mask);
+#endif // USE_BUTTON
+#if USE_ALARM
+	waitSeconds(5);
+    MXC_LP_EnableRTCAlarmWakeup();
+#endif // USE_ALARM
+#if USE_GPIO
     /* Enable GPIO wakeup */
     MXC_GPIO_IntConfig((mxc_gpio_cfg_t *)&pb_pin[0], MXC_GPIO_INT_BOTH);
     MXC_GPIO_EnableInt(pb_pin[0].port, pb_pin[0].mask);
@@ -258,43 +381,46 @@ int main(void)
     NVIC_ClearPendingIRQ(MXC_GPIO_GET_IRQ(MXC_GPIO_GET_IDX(pb_pin[1].port)));
     NVIC_EnableIRQ(MXC_GPIO_GET_IRQ(MXC_GPIO_GET_IDX(pb_pin[1].port)));
     MXC_LP_EnableGPIOWakeup((mxc_gpio_cfg_t *)&pb_pin[1]);
+#endif
 
-    /* Setup RTC */
-    if (MXC_RTC_Init(0, 0) != E_NO_ERROR) {
-        printf("Failed RTC Initialization\n");
-        printf("Example Failed\n");
-        while (1) {}
-    }
 
-    if (MXC_RTC_Start() != E_NO_ERROR) {
-        printf("Failed RTC_Start\n");
-        printf("Example Failed\n");
-        while (1) {}
-    }
-
-    // Clear all ECC Errors -- write-1-to-clear
-    MXC_GCR->ecc_er = (volatile uint32_t)MXC_GCR->ecc_er;
-    MXC_GCR->ecc_ced = (volatile uint32_t)MXC_GCR->ecc_ced;
-
-    // Enable interrupts for ECC errors
-    MXC_GCR->ecc_irqen |= MXC_F_GCR_ECC_IRQEN_SYSRAM0ECCEN | MXC_F_GCR_ECC_IRQEN_SYSRAM1ECCEN |
-                          MXC_F_GCR_ECC_IRQEN_SYSRAM2ECCEN | MXC_F_GCR_ECC_IRQEN_SYSRAM3ECCEN |
-                          MXC_F_GCR_ECC_IRQEN_SYSRAM4ECCEN | MXC_F_GCR_ECC_IRQEN_SYSRAM5ECCEN;
-    NVIC_EnableIRQ(ECC_IRQn);
-
-    LED_Off(1);
 
     while (1) {
+#if DO_SLEEP
+        PRINT("Entering SLEEP mode.\n");
+        setTrigger(0);
+        MXC_LP_EnterSleepMode();
+        PRINT("Waking up from SLEEP mode.\n");
 
-        // printf("Entering DEEPSLEEP mode.\n");
+#endif // DO_SLEEP
+#if DO_DEEPSLEEP
+
+  #if USE_GPIO
         LED_On(0); // GPIO pin is low when awake
         MXC_Delay(MXC_DELAY_USEC(100));
-    
         prepForDeepSleep();
-
         LED_Off(0); // GPIO signal is high when asleep
         MXC_LP_EnterDeepSleepMode();
-
         recoverFromDeepSleep();
+  #else
+        PRINT("Entering DEEPSLEEP mode.\n");
+        LED_Off(0);
+        setTrigger(0);
+        prepForDeepSleep();
+        MXC_LP_EnterDeepSleepMode();
+        recoverFromDeepSleep();
+        PRINT("Waking up from DEEPSLEEP mode.\n");
+        LED_On(0);
+        setTrigger(1);
+  #endif
+#endif // DO_DEEPSLEEP
+
+#if DO_BACKUP
+        PRINT("Entering BACKUP mode.\n");
+        setTrigger(0);
+        prepForDeepSleep();
+        MXC_LP_EnterBackupMode(NULL);
+        recoverFromDeepSleep();
+#endif // DO_BACKUP
     }
 }
