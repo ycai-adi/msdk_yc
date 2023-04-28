@@ -100,6 +100,15 @@ void ECC_IRQHandler(void)
     while(1) {}
 }
 
+// __attribute__((interrupt))
+// void GPIOWAKE_IRQHandler(void)
+// {
+//     NVIC_DisableIRQ(GPIOWAKE_IRQn);
+//     MXC_LP_ClearWakeStatus();
+// }
+
+
+
 #if USE_ALARM
 
 volatile int alarmed;
@@ -198,6 +207,18 @@ void switchToHIRCD4(void)
     SystemCoreClockUpdate();
 }
 
+void switchToHIRCD8(void)
+{
+    MXC_SETFIELD(MXC_GCR->clkcn, MXC_F_GCR_CLKCN_PSC, MXC_S_GCR_CLKCN_PSC_DIV8);
+    MXC_GCR->clkcn |= MXC_F_GCR_CLKCN_HIRC_EN;
+    MXC_SETFIELD(MXC_GCR->clkcn, MXC_F_GCR_CLKCN_CLKSEL, MXC_S_GCR_CLKCN_CLKSEL_HIRC);
+    /* Disable unused clocks */
+    while (!(MXC_GCR->clkcn & MXC_F_GCR_CLKCN_CKRDY)) {}
+    /* Wait for the switch to occur */
+    MXC_GCR->clkcn &= ~(MXC_F_GCR_CLKCN_HIRC96M_EN);
+    SystemCoreClockUpdate();
+}
+
 /*
  *  Switch the system clock to the HIRC96
  *
@@ -234,8 +255,14 @@ void prepForDeepSleep(void)
 	*(volatile int *)0x40005444 = (*(volatile int *)0x40005444 & (~(0x3 << 6)))  | (0x2 << 6);
 
     switchToHIRCD4();
+    // switchToHIRCD8();
 
-    MXC_SIMO_SetVregO_B(810); /* Reduce VCOREB to 0.81v */
+    ///// Hiep suggested waiting for VCB ready here
+    /* Wait for VCOREB to be ready */
+    while (!(MXC_SIMO->buck_out_ready & MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYB)) {}
+
+    // MXC_SIMO_SetVregO_B(810); /* Reduce VCOREB to 0.81v -- this will stuck in brownout */
+    MXC_SIMO_SetVregO_B(900); /* this fixes brown out issue */ 
 
     MXC_MCR->ctrl = (MXC_MCR->ctrl & ~(MXC_F_MCR_CTRL_VDDCSW)) | 
                     (0x2 << MXC_F_MCR_CTRL_VDDCSW_POS);
@@ -262,7 +289,13 @@ void recoverFromDeepSleep(void)
         while (!(MXC_SIMO->buck_out_ready & MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYB)) {}
         MXC_SIMO_SetVregO_B(1000);
         while (!(MXC_SIMO->buck_out_ready & MXC_F_SIMO_BUCK_OUT_READY_BUCKOUTRDYB)) {}
-        }
+    } else {
+
+    MXC_MCR->ctrl = (MXC_MCR->ctrl & ~(MXC_F_MCR_CTRL_VDDCSW)) | 
+                    (0x3 << MXC_F_MCR_CTRL_VDDCSW_POS);
+
+    }
+
 
     MXC_LP_ICache0PowerUp();
     MXC_ICC_Enable();
@@ -366,7 +399,8 @@ int main(void)
     MXC_LP_EnableRTCAlarmWakeup();
 #endif // USE_ALARM
 #if USE_GPIO
-    /* Enable GPIO wakeup */
+
+    /* Enable GPIO wakeup  (GPIOn_IRQHandler)*/
     MXC_GPIO_IntConfig((mxc_gpio_cfg_t *)&pb_pin[0], MXC_GPIO_INT_BOTH);
     MXC_GPIO_EnableInt(pb_pin[0].port, pb_pin[0].mask);
 
@@ -381,8 +415,21 @@ int main(void)
     NVIC_ClearPendingIRQ(MXC_GPIO_GET_IRQ(MXC_GPIO_GET_IDX(pb_pin[1].port)));
     NVIC_EnableIRQ(MXC_GPIO_GET_IRQ(MXC_GPIO_GET_IDX(pb_pin[1].port)));
     MXC_LP_EnableGPIOWakeup((mxc_gpio_cfg_t *)&pb_pin[1]);
+
+    // /* Enable GPIO wakeup  (GPIOWAKE_IRQHandler)*/
+    // NVIC_ClearPendingIRQ(GPIOWAKE_IRQn);
+
+    // MXC_LP_ClearWakeStatus();
+    // // MXC_GCR->pm |= MXC_F_GCR_PM_GPIO_WE;
+    // MXC_LP_EnableGPIOWakeup((mxc_gpio_cfg_t *)&pb_pin[0]);
+    // MXC_LP_EnableGPIOWakeup((mxc_gpio_cfg_t *)&pb_pin[1]);
+    // NVIC_EnableIRQ(GPIOWAKE_IRQn);
+
 #endif
 
+    // *(volatile int *)0x40005434 = 1;
+    // *(volatile int *)0x40005440 = (*(volatile int *)0x40005440 & (~(0x3 << 24))) | (0x2 << 24);
+    // *(volatile int *)0x40005444 = (*(volatile int *)0x40005444 & (~(0x3 << 6)))  | (0x2 << 6);
 
 
     while (1) {
@@ -394,13 +441,12 @@ int main(void)
 
 #endif // DO_SLEEP
 #if DO_DEEPSLEEP
-
   #if USE_GPIO
-        LED_On(0); // GPIO pin is low when awake
         MXC_Delay(MXC_DELAY_USEC(100));
         prepForDeepSleep();
         LED_Off(0); // GPIO signal is high when asleep
         MXC_LP_EnterDeepSleepMode();
+        LED_On(0); // GPIO pin is low when awake
         recoverFromDeepSleep();
   #else
         PRINT("Entering DEEPSLEEP mode.\n");
@@ -416,11 +462,29 @@ int main(void)
 #endif // DO_DEEPSLEEP
 
 #if DO_BACKUP
+  #if USE_GPIO
+        PRINT("Entering BACKUP mode.\n");
+        prepForDeepSleep();
+        MXC_LP_EnterBackupMode(NULL);
+        recoverFromDeepSleep();
+  #else
         PRINT("Entering BACKUP mode.\n");
         setTrigger(0);
         prepForDeepSleep();
         MXC_LP_EnterBackupMode(NULL);
         recoverFromDeepSleep();
+  #endif
 #endif // DO_BACKUP
     }
+}
+
+void HardFault_Handler(void)
+{
+    while (1) {
+        LED_On(0);
+        MXC_Delay(MXC_DELAY_USEC(100));
+        LED_Off(0);
+        MXC_Delay(MXC_DELAY_USEC(200));
+    }
+
 }
