@@ -115,11 +115,23 @@ void vApplicationIdleHook(void)
 int main(void)
 {
     /* Print banner (RTOS scheduler not running) */
-    printf("\n-=- %s BLE FreeRTOS (%s) Demo -=-\n", STRING(TARGET), tskKERNEL_VERSION_NUMBER);
+    printf("\n-=- %s BLE FreeRTOS OTA Demo 1 (%s) -=-\n", STRING(TARGET), tskKERNEL_VERSION_NUMBER);
 #if configUSE_TICKLESS_IDLE
     printf("Tickless idle is enabled\n");
     /* Initialize CPU Active LED */
+    volatile int m, n;
+    for (m = 0; m < 6; m++)
+    {
+        for (n = 0; n < 0x3FFFFF; n++){}
+        LED_Toggle(SLEEP_LED);
+    }
     LED_On(SLEEP_LED);
+
+    for (m = 0; m < 6; m++)
+    {
+        for (n = 0; n < 0x3FFFFF; n++) {}
+        LED_Toggle(DEEPSLEEP_LED);
+    }
     LED_On(DEEPSLEEP_LED);
 #endif
     printf("SystemCoreClock = %d\n", SystemCoreClock);

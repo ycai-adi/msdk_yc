@@ -11,16 +11,16 @@
 LIB_FREERTOS = 1
 
 # Un-comment this line to enable tickless mode, standby mode between events
-# PROJ_CFLAGS += -DUSE_TICKLESS_IDLE=1
+PROJ_CFLAGS += -DUSE_TICKLESS_IDLE=1
 
 # Enable CORDIO library
 LIB_CORDIO = 1
 
 # Set to zero to minimize code size
-DEBUG = 1
+DEBUG = 0
 
 # Set to zero to minimize code size
-TRACE = 1
+TRACE = 0
 
 # Minimize the database for storing pairing information
 PAL_NVM_SIZE = 0x2000
