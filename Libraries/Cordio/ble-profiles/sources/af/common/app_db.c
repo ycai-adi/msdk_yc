@@ -1229,6 +1229,7 @@ void AppDbNvmReadAll(void)
 
     if (valid && valid != 0xFF)
     {
+      APP_TRACE_INFO0("AppDbNvmReadAll: reading record");
       pRec->inUse = TRUE;
       pRec->valid = TRUE;
 
@@ -1272,6 +1273,9 @@ void AppDbNvmReadAll(void)
       WsfNvmReadData(DBNV_ID(APP_DB_NVM_CSF_ID, i), pRec->csf, ATT_CSF_LEN, NULL);
       WsfNvmReadData(DBNV_ID(APP_DB_NVM_CACHE_HASH_ID, i), &pRec->cacheByHash, sizeof(bool_t), NULL);
       WsfNvmReadData(DBNV_ID(APP_DB_NVM_HASH_ID, i), pRec->dbHash, ATT_DATABASE_HASH_LEN, NULL);
+    }
+    else{
+      APP_TRACE_INFO0("AppDbNvmReadAll: record not valid");
     }
   }
 }

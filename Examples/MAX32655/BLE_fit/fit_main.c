@@ -106,8 +106,8 @@ static const appSlaveCfg_t fitSlaveCfg = {
 /*! configurable parameters for security */
 static const appSecCfg_t fitSecCfg = {
     DM_AUTH_BOND_FLAG | DM_AUTH_SC_FLAG, /*! Authentication and bonding flags */
-    0, /*! Initiator key distribution flags */
-    DM_KEY_DIST_LTK, /*! Responder key distribution flags */
+    DM_KEY_DIST_IRK, /*! Initiator key distribution flags */
+    DM_KEY_DIST_LTK | DM_KEY_DIST_IRK, /*! Responder key distribution flags */
     FALSE, /*! TRUE if Out-of-band pairing data is present */
     TRUE /*! TRUE to initiate security upon connection */
 };
@@ -139,7 +139,7 @@ static const basCfg_t fitBasCfg = {
 /*! SMP security parameter configuration */
 static const smpCfg_t fitSmpCfg = {
     500, /*! 'Repeated attempts' timeout in msec */
-    SMP_IO_NO_IN_NO_OUT, /*! I/O Capability */
+    SMP_IO_DISP_ONLY, /*! I/O Capability */
     7, /*! Minimum encryption key length */
     16, /*! Maximum encryption key length */
     1, /*! Attempts to trigger 'repeated attempts' timeout */
@@ -206,9 +206,17 @@ static const attsCccSet_t fitCccSet[FIT_NUM_CCC_IDX] = {
 /**************************************************************************************************
   Global Variables
 **************************************************************************************************/
+/*! application control block */
+static struct {
+    wsfHandlerId_t handlerId; /* WSF handler ID */
+    appDbHdl_t resListRestoreHdl; /*! Resolving List last restored handle */
+    bool_t restoringResList; /*! Restoring resolving list from NVM */
+} fitCb;
 
-/*! WSF handler ID */
-wsfHandlerId_t fitHandlerId;
+/*! local IRK */
+static uint8_t localIrk[] = { 0x95, 0xC8, 0xEE, 0x6F, 0xC5, 0x0D, 0xEF, 0x93,
+                              0x35, 0x4E, 0x7C, 0x57, 0x08, 0xE2, 0xA3, 0x85 };
+
 
 /* WSF Timer to send running speed and cadence measurement data */
 wsfTimer_t fitRscmTimer;
@@ -234,10 +242,12 @@ static void fitDmCback(dmEvt_t *pDmEvt)
     uint16_t len;
 
     len = DmSizeOfEvt(pDmEvt);
-
-    if ((pMsg = WsfMsgAlloc(len)) != NULL) {
+    if (pDmEvt->hdr.event == DM_SEC_ECC_KEY_IND) {
+        DmSecSetEccKey(&pDmEvt->eccMsg.data.key);
+    } else  {
+        if ((pMsg = WsfMsgAlloc(len)) != NULL)
         memcpy(pMsg, pDmEvt, len);
-        WsfMsgSend(fitHandlerId, pMsg);
+        WsfMsgSend(fitCb.handlerId, pMsg);
     }
 }
 
@@ -258,7 +268,7 @@ static void fitAttCback(attEvt_t *pEvt)
         memcpy(pMsg, pEvt, sizeof(attEvt_t));
         pMsg->pValue = (uint8_t *)(pMsg + 1);
         memcpy(pMsg->pValue, pEvt->pValue, pEvt->valueLen);
-        WsfMsgSend(fitHandlerId, pMsg);
+        WsfMsgSend(fitCb.handlerId, pMsg);
     }
 }
 
@@ -282,11 +292,12 @@ static void fitCccCback(attsCccEvt_t *pEvt)
         AppCheckBonded((dmConnId_t)pEvt->hdr.param)) {
         /* Store value in device database. */
         AppDbSetCccTblValue(dbHdl, pEvt->idx, pEvt->value);
+        AppDbNvmStoreCccTbl(dbHdl);
     }
 
     if ((pMsg = WsfMsgAlloc(sizeof(attsCccEvt_t))) != NULL) {
         memcpy(pMsg, pEvt, sizeof(attsCccEvt_t));
-        WsfMsgSend(fitHandlerId, pMsg);
+        WsfMsgSend(fitCb.handlerId, pMsg);
     }
 }
 
@@ -321,10 +332,53 @@ static void fitSendRunningSpeedMeasurement(dmConnId_t connId)
     /* Configure and start timer to send the next measurement */
     fitRscmTimer.msg.event = FIT_RUNNING_TIMER_IND;
     fitRscmTimer.msg.status = FIT_RSCS_SM_CCC_IDX;
-    fitRscmTimer.handlerId = fitHandlerId;
+    fitRscmTimer.handlerId = fitCb.handlerId;
     fitRscmTimer.msg.param = connId;
 
     WsfTimerStartSec(&fitRscmTimer, fitRscmPeriod);
+}
+
+/*************************************************************************************************/
+/*!
+*
+*  \brief  Add device to resolving list.
+*
+*  \param  dbHdl   Device DB record handle.
+*
+*  \return None.
+*/
+/*************************************************************************************************/
+static void fitPrivAddDevToResList(appDbHdl_t dbHdl)
+{
+    dmSecKey_t *pPeerKey;
+
+    /* if peer IRK present */
+    if ((pPeerKey = AppDbGetKey(dbHdl, DM_KEY_IRK, NULL)) != NULL) {
+        /* set advertising peer address */
+        AppSetAdvPeerAddr(pPeerKey->irk.addrType, pPeerKey->irk.bdAddr);
+    }
+}
+
+/*************************************************************************************************/
+/*!
+*
+*  \brief  Handle remove device from resolving list indication.
+*
+*  \param  pMsg    Pointer to DM callback event message.
+*
+*  \return None.
+*/
+/*************************************************************************************************/
+static void fitPrivRemDevFromResListInd(dmEvt_t *pMsg)
+{
+    if (pMsg->hdr.status == HCI_SUCCESS) {
+        if (AppDbGetHdl((dmConnId_t)pMsg->hdr.param) != APP_DB_HDL_NONE) {
+            uint8_t addrZeros[BDA_ADDR_LEN] = { 0 };
+
+            /* clear advertising peer address and its type */
+            AppSetAdvPeerAddr(HCI_ADDR_TYPE_PUBLIC, addrZeros);
+        }
+    }
 }
 
 /*************************************************************************************************/
@@ -416,6 +470,56 @@ static void fitSetup(fitMsg_t *pMsg)
 
     /* start advertising; automatically set connectable/discoverable mode and bondable mode */
     AppAdvStart(APP_MODE_AUTO_INIT);
+}
+
+/*************************************************************************************************/
+/*!
+ *  \brief  Begin restoring the resolving list.
+ *
+ *  \param  pMsg    Pointer to DM callback event message.
+ *
+ *  \return None.
+ */
+/*************************************************************************************************/
+static void fitRestoreResolvingList(dmEvt_t *pMsg)
+{
+    /* Restore first device to resolving list in Controller. */
+    fitCb.resListRestoreHdl = AppAddNextDevToResList(APP_DB_HDL_NONE);
+
+    if (fitCb.resListRestoreHdl == APP_DB_HDL_NONE) {
+        /* No device to restore.  Setup application. */
+        fitSetup(pMsg);
+    } else {
+        fitCb.restoringResList = TRUE;
+    }
+}
+
+/*************************************************************************************************/
+/*!
+*  \brief  Handle add device to resolving list indication.
+ *
+ *  \param  pMsg    Pointer to DM callback event message.
+ *
+ *  \return None.
+ */
+/*************************************************************************************************/
+static void fitPrivAddDevToResListInd(dmEvt_t *pMsg)
+{
+    /* Check if in the process of restoring the Device List from NV */
+    if (fitCb.restoringResList) {
+        /* Set the advertising peer address. */
+        fitPrivAddDevToResList(fitCb.resListRestoreHdl);
+
+        /* Retore next device to resolving list in Controller. */
+        fitCb.resListRestoreHdl = AppAddNextDevToResList(fitCb.resListRestoreHdl);
+
+        if (fitCb.resListRestoreHdl == APP_DB_HDL_NONE) {
+            /* No additional device to restore. Setup application. */
+            fitSetup(pMsg);
+        }
+    } else {
+        fitPrivAddDevToResList(AppDbGetHdl((dmConnId_t)pMsg->hdr.param));
+    }
 }
 
 /*************************************************************************************************/
@@ -518,6 +622,23 @@ static void fitBtnCback(uint8_t btn)
     }
 }
 
+void fitEventToString(uint8_t event, char* output) {
+    switch (event) {
+        case 0:
+            strcpy(output, "String 0");
+            break;
+        case 1:
+            strcpy(output, "String 1");
+            break;
+        case 2:
+            strcpy(output, "String 2");
+            break;
+        // Add more cases as needed
+        
+        default:
+            strcpy(output, "Unknown");
+    }
+}
 /*************************************************************************************************/
 /*!
  *  \brief  Process messages from the event handler.
@@ -529,8 +650,19 @@ static void fitBtnCback(uint8_t btn)
 /*************************************************************************************************/
 static void fitProcMsg(fitMsg_t *pMsg)
 {
-    uint8_t uiEvent = APP_UI_NONE;
+    AppUiAction(pMsg->hdr.event);
+    appConnCb_t *pCb;
 
+  if (pMsg->hdr.param != DM_CONN_ID_NONE)
+  {
+    /* look up app connection control block from DM connection ID */
+    pCb = &appConnCb[pMsg->hdr.param - 1];
+  }
+  else
+  {
+    pCb = NULL;
+  }
+    
     switch (pMsg->hdr.event) {
     case FIT_RUNNING_TIMER_IND:
         fitSendRunningSpeedMeasurement((dmConnId_t)pMsg->ccc.hdr.param);
@@ -556,53 +688,55 @@ static void fitProcMsg(fitMsg_t *pMsg)
     case DM_RESET_CMPL_IND:
         AttsCalculateDbHash();
         DmSecGenerateEccKeyReq();
+        AppDbNvmReadAll();
+        fitRestoreResolvingList(pMsg);
         fitSetup(pMsg);
-        uiEvent = APP_UI_RESET_CMPL;
         break;
 
     case DM_ADV_SET_START_IND:
-        uiEvent = APP_UI_ADV_SET_START_IND;
         break;
 
     case DM_ADV_SET_STOP_IND:
-        uiEvent = APP_UI_ADV_SET_STOP_IND;
         break;
 
     case DM_ADV_START_IND:
-        uiEvent = APP_UI_ADV_START;
         break;
 
     case DM_ADV_STOP_IND:
-        uiEvent = APP_UI_ADV_STOP;
+        break;
+    
+    case DM_PRIV_ADD_DEV_TO_RES_LIST_IND:
+        fitPrivAddDevToResListInd(pMsg);
+    break;
+
+    case DM_PRIV_REM_DEV_FROM_RES_LIST_IND:
+        fitPrivRemDevFromResListInd(pMsg);
         break;
 
     case DM_CONN_OPEN_IND:
         HrpsProcMsg(&pMsg->hdr);
         BasProcMsg(&pMsg->hdr);
-        uiEvent = APP_UI_CONN_OPEN;
+        if (fitSecCfg.initiateSec) {
+            AppSlaveSecurityReq((dmConnId_t)pMsg->hdr.param);
+        }
         break;
 
     case DM_CONN_CLOSE_IND:
         fitClose(pMsg);
-        uiEvent = APP_UI_CONN_CLOSE;
         break;
 
     case DM_SEC_PAIR_CMPL_IND:
         DmSecGenerateEccKeyReq();
-        uiEvent = APP_UI_SEC_PAIR_CMPL;
         break;
 
     case DM_SEC_PAIR_FAIL_IND:
         DmSecGenerateEccKeyReq();
-        uiEvent = APP_UI_SEC_PAIR_FAIL;
         break;
 
     case DM_SEC_ENCRYPT_IND:
-        uiEvent = APP_UI_SEC_ENCRYPT;
         break;
 
     case DM_SEC_ENCRYPT_FAIL_IND:
-        uiEvent = APP_UI_SEC_ENCRYPT_FAIL;
         break;
 
     case DM_SEC_AUTH_REQ_IND:
@@ -622,16 +756,12 @@ static void fitProcMsg(fitMsg_t *pMsg)
         break;
 
     case DM_HW_ERROR_IND:
-        uiEvent = APP_UI_HW_ERROR;
         break;
 
     default:
         break;
     }
 
-    if (uiEvent != APP_UI_NONE) {
-        AppUiAction(uiEvent);
-    }
 }
 
 /*************************************************************************************************/
@@ -701,7 +831,7 @@ void FitHandlerInit(wsfHandlerId_t handlerId)
     APP_TRACE_INFO0("FitHandlerInit");
 
     /* store handler ID */
-    fitHandlerId = handlerId;
+    fitCb.handlerId = handlerId;
 
     /* Set configuration pointers */
     pAppAdvCfg = (appAdvCfg_t *)&fitAdvCfg;
@@ -712,6 +842,9 @@ void FitHandlerInit(wsfHandlerId_t handlerId)
     /* Initialize application framework */
     AppSlaveInit();
     AppServerInit();
+
+    /* Set IRK for the local device */
+    DmSecSetLocalIrk(localIrk);
 
     /* Set stack configuration pointers */
     pSmpCfg = (smpCfg_t *)&fitSmpCfg;

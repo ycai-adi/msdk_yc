@@ -34,7 +34,7 @@
 #include "smp_main.h"
 
 #ifndef SMP_EXTRA_TRACE
-#define SMP_EXTRA_TRACE FALSE
+#define SMP_EXTRA_TRACE TRUE
 #endif
 
 /*************************************************************************************************/
