@@ -79,6 +79,12 @@ int Board_Init(void)
 {
     int err;
 
+    // Configure the pins as setup by the Pin Mux GUI.  If the Pin Mux GUI has not
+    // been used, this function will do nothing.
+    if ((err = MXC_SYS_PinMuxUtil_Config()) < E_NO_ERROR) {
+        return err;
+    }
+
     if ((err = Console_Init()) < E_NO_ERROR) {
         return err;
     }

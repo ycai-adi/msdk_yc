@@ -47,6 +47,7 @@
 #include "flc.h"
 #include "gcr_regs.h"
 #include "fcr_regs.h"
+#include "gpio.h"
 
 /**
  * @ingroup mxc_sys
@@ -325,4 +326,21 @@ void MXC_SYS_Reset_Periph(mxc_sys_reset_t reset)
         while (MXC_GCR->rst0 & (0x1 << reset)) {}
     }
 }
+
+__weak int MXC_SYS_GPIO_Config(const mxc_gpio_cfg_t *cfg)
+{
+    // Default behavior is to call MXC_SYS_GPIO_Config.  This function can be overridden
+    // with a 'strong' version to prevent the peripheral drivers from configuring their
+    // required pins.
+    return MXC_GPIO_Config(cfg);
+}
+
+__weak int MXC_SYS_PinMuxUtil_Config()
+{
+    // The default behavior is to not configure the pins here.  Each peripheral driver
+    // will initialize the pins it needs.  Overrride this function with a 'strong' version
+    // to configure the pins outside of each peripheral's initialization function.
+    return E_NO_ERROR;
+}
+
 /**@} end of mxc_sys */

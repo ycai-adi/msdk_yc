@@ -79,7 +79,7 @@ typedef enum {
 
 /** @brief I2S Configuration Struct */
 typedef struct {
-    mxc_i2s_sys_map_t map;
+    mxc_i2s_sys_map_t map;      ///< This field will be ignored if the PinMux GUI is used.
     mxc_i2s_justify_t justify;
     mxc_i2s_audio_mode_t audio_mode;
     mxc_i2s_direction_t audio_direction;

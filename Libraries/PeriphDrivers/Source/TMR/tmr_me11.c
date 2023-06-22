@@ -47,7 +47,7 @@ int MXC_TMR_Init(mxc_tmr_regs_t *tmr, mxc_tmr_cfg_t *cfg)
         MXC_SYS_Reset_Periph(MXC_SYS_RESET0_TIMER0);
         while (MXC_GCR->rst0 & MXC_F_GCR_RST0_TIMER0) {}
         MXC_SYS_ClockEnable(MXC_SYS_PERIPH_CLOCK_TMR0);
-        MXC_GPIO_Config(&gpio_cfg_tmr0);
+        MXC_SYS_GPIO_Config(&gpio_cfg_tmr0);
         break;
     case 1:
         MXC_SYS_Reset_Periph(MXC_SYS_RESET0_TIMER1);

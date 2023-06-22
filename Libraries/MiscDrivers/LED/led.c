@@ -34,6 +34,7 @@
 #include "board.h"
 #include "led.h"
 #include "mxc_device.h"
+#include "mxc_sys.h"
 
 /******************************************************************************/
 int LED_Init(void)
@@ -45,7 +46,7 @@ int LED_Init(void)
     for (i = 0; i < num_leds; i++) {
         LED_Off(i); // Set the output value
 
-        if (MXC_GPIO_Config(&led_pin[i]) != E_NO_ERROR) {
+        if (MXC_SYS_GPIO_Config(&led_pin[i]) != E_NO_ERROR) {
             retval = E_UNKNOWN;
         }
     }

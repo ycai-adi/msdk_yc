@@ -83,14 +83,14 @@ int MXC_RTC_Init(uint32_t sec, uint8_t ssec)
 
 int MXC_RTC_SquareWave(mxc_rtc_reva_sqwave_en_t sqe, mxc_rtc_freq_sel_t ft)
 {
-    MXC_GPIO_Config(&gpio_cfg_32kcal);
+    MXC_SYS_GPIO_Config(&gpio_cfg_32kcal);
 
     return MXC_RTC_RevA_SquareWave((mxc_rtc_reva_regs_t *)MXC_RTC, sqe, ft);
 }
 
 int MXC_RTC_SquareWaveStart(mxc_rtc_freq_sel_t fq)
 {
-    MXC_GPIO_Config(&gpio_cfg_32kcal);
+    MXC_SYS_GPIO_Config(&gpio_cfg_32kcal);
 
     return MXC_RTC_RevA_SquareWave((mxc_rtc_reva_regs_t *)MXC_RTC, MXC_RTC_REVA_SQUARE_WAVE_ENABLED,
                                    fq);

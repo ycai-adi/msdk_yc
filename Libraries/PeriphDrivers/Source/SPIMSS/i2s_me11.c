@@ -57,9 +57,9 @@ int dma_channel = -1;
 int MXC_I2S_Init(const mxc_i2s_config_t *config, void (*dma_ctz_cb)(int, int))
 {
     if (config->map == I2S_MAP_A) {
-        MXC_GPIO_Config(&gpio_cfg_spi1a); // SPIMSS: I2S and SPI share pins
+        MXC_SYS_GPIO_Config(&gpio_cfg_spi1a); // SPIMSS: I2S and SPI share pins
     } else if (config->map == I2S_MAP_B) {
-        MXC_GPIO_Config(&gpio_cfg_spi1b);
+        MXC_SYS_GPIO_Config(&gpio_cfg_spi1b);
     } else {
         return E_BAD_PARAM;
     }
