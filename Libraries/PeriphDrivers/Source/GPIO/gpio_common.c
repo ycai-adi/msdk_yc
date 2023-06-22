@@ -42,6 +42,7 @@
 static void (*callback[MXC_CFG_GPIO_INSTANCES][MXC_CFG_GPIO_PINS_PORT])(void *);
 static void *cbparam[MXC_CFG_GPIO_INSTANCES][MXC_CFG_GPIO_PINS_PORT];
 static uint8_t initialized = 0;
+static int gpio_cfg_locked = 0;
 
 /* **** Functions **** */
 int MXC_GPIO_Common_Init(uint32_t portmask)
@@ -105,5 +106,29 @@ void MXC_GPIO_Common_Handler(unsigned int port)
 
         pin++;
         stat >>= 1;
+    }
+}
+
+__weak int MXC_GPIO_InitAll()
+{
+    // Do nothing for the default implementation.
+    return E_NO_ERROR;
+}
+
+void MXC_GPIO_LockConfig()
+{
+    gpio_cfg_locked = 1;
+}
+
+void MXC_GPIO_UnlockConfig()
+{
+    gpio_cfg_locked = 0;
+}
+
+int MXC_GPIO_Config(const mxc_gpio_cfg_t *cfg)
+{
+    if(!gpio_cfg_locked)
+    {
+        MXC_GPIO_Config_Direct(cfg);
     }
 }

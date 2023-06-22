@@ -179,11 +179,41 @@ int MXC_GPIO_Shutdown(uint32_t portMask);
 int MXC_GPIO_Reset(uint32_t portMask);
 
 /**
- * @brief      Configure GPIO pin(s).
+ * @brief      Initialize and configure all GPIO pins.  
+ * The default implementation of this function does nothing and relies on each peripheral driver to configure
+ * the pins used by that peripheral.  Override this weak function to handle the all of the GPIO configuration in
+ * one step. New implementations should lock the GPIO state (MXC_GPIO_LockConfig()) before returning.
+ * @return     #E_NO_ERROR if everything is successful. See \ref MXC_Error_Codes for the list of error codes.
+ */
+int MXC_GPIO_InitAll()
+
+/**
+ * @brief      Locks the GPIO configuration so that calls to MXC_GPIO_Config() have no effect.
+ * See also MXC_GPIO_Config, MXC_GPIO_Config_Direct(), and MXC_GPIO_UnlockConfig()
+ */
+void MXC_GPIO_LockConfig()
+
+/**
+ * @brief      Unlocks the GPIO configuration so that calls to MXC_GPIO_Config() have an effect.
+ * See also MXC_GPIO_Config, MXC_GPIO_Config_Direct(), and MXC_GPIO_LockConfig()
+ */
+void MXC_GPIO_UnlockConfig()
+
+/**
+ * @brief      Configure GPIO pin(s) only if the GPIO configuration is not locked.
+ * See also MXC_GPIO_Config_Direct(), MXC_GPIO_LockConfig(), and MXC_GPIO_UnlockConfig()
  * @param      cfg   Pointer to configuration structure describing the pin.
  * @return     #E_NO_ERROR if everything is successful. See \ref MXC_Error_Codes for the list of error codes.
  */
-int MXC_GPIO_Config(const mxc_gpio_cfg_t *cfg);
+int MXC_GPIO_Config(const mxc_gpio_cfg_t *cfg)
+
+/**
+ * @brief      Configure GPIO pin(s) regardless of their lock state.  \sa  MXC_GPIO_Config_Direct
+ * See also MXC_GPIO_Config(), MXC_GPIO_LockConfig(), and MXC_GPIO_UnlockConfig()
+ * @param      cfg   Pointer to configuration structure describing the pin.
+ * @return     #E_NO_ERROR if everything is successful. See \ref MXC_Error_Codes for the list of error codes.
+ */
+int MXC_GPIO_Config_Direct(const mxc_gpio_cfg_t *cfg)
 
 /**
  * @brief      Gets the pin(s) input state.

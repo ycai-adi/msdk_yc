@@ -79,6 +79,10 @@ int Board_Init(void)
 {
     int err;
 
+    if ((err = MXC_GPIO_InitAll() < E_NO_ERROR) {
+        return err;
+    }
+
     if ((err = Console_Init()) < E_NO_ERROR) {
         return err;
     }

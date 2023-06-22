@@ -70,7 +70,7 @@ int MXC_GPIO_Reset(uint32_t portmask)
     return E_NO_ERROR;
 }
 
-int MXC_GPIO_Config(const mxc_gpio_cfg_t *cfg)
+int MXC_GPIO_Config_Direct(const mxc_gpio_cfg_t *cfg)
 {
     mxc_gpio_regs_t *gpio = cfg->port;
 

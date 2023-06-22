@@ -112,7 +112,8 @@ struct mxc_spimss_req {
  * @param     spi     Pointer to spi module to initialize.
  * @param     mode    SPI mode for clock phase and polarity.
  * @param     freq    Desired clock frequency.
- * @param     sys_cfg System configuration object
+ * @param     sys_cfg System configuration object. This parameter is ignored if the GPIO 
+ *            configuration is locked.
  *
  * @return \c #E_NO_ERROR if successful, appropriate error otherwise
  */
