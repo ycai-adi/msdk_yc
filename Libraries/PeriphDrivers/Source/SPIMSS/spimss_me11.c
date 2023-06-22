@@ -68,9 +68,9 @@ int MXC_SPIMSS_Init(mxc_spimss_regs_t *spi, unsigned mode, unsigned freq, const 
         while (MXC_GCR->rst0 & MXC_F_GCR_RST0_SPI1) {}
         MXC_GCR->pclk_dis0 &= ~(MXC_F_GCR_PCLK_DIS0_SPI1D);
         if (sys_cfg == MAP_A) {
-            MXC_SYS_GPIO_Config(&gpio_cfg_spi1a); // SPI1A chosen
+            MXC_GPIO_Config(&gpio_cfg_spi1a); // SPI1A chosen
         } else if (sys_cfg == MAP_B) {
-            MXC_SYS_GPIO_Config(&gpio_cfg_spi1b); // SPI1B chosen
+            MXC_GPIO_Config(&gpio_cfg_spi1b); // SPI1B chosen
         } else {
             return E_BAD_PARAM;
         }

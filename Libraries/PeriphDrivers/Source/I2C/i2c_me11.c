@@ -63,10 +63,10 @@ int MXC_I2C_Init(mxc_i2c_regs_t *i2c, int masterMode, unsigned int slaveAddr)
 
     if (i2c == MXC_I2C0) {
         MXC_SYS_ClockEnable(MXC_SYS_PERIPH_CLOCK_I2C0);
-        MXC_SYS_GPIO_Config(&gpio_cfg_i2c0);
+        MXC_GPIO_Config(&gpio_cfg_i2c0);
     } else if (i2c == MXC_I2C1) {
         MXC_SYS_ClockEnable(MXC_SYS_PERIPH_CLOCK_I2C1);
-        MXC_SYS_GPIO_Config(&gpio_cfg_i2c1);
+        MXC_GPIO_Config(&gpio_cfg_i2c1);
     } else {
         return E_NO_DEVICE;
     }

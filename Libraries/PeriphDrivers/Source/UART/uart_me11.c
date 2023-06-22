@@ -86,20 +86,20 @@ int MXC_UART_Init(mxc_uart_regs_t *uart, unsigned int baud, sys_map_t map)
 
     switch (MXC_UART_GET_IDX(uart)) {
     case 0:
-        MXC_SYS_GPIO_Config(&gpio_cfg_uart0);
+        MXC_GPIO_Config(&gpio_cfg_uart0);
         MXC_SYS_ClockEnable(MXC_SYS_PERIPH_CLOCK_UART0);
         break;
 
     case 1:
         switch (map) {
         case MAP_A:
-            MXC_SYS_GPIO_Config(&gpio_cfg_uart1a);
+            MXC_GPIO_Config(&gpio_cfg_uart1a);
             break;
         case MAP_B:
-            MXC_SYS_GPIO_Config(&gpio_cfg_uart1b);
+            MXC_GPIO_Config(&gpio_cfg_uart1b);
             break;
         case MAP_C:
-            MXC_SYS_GPIO_Config(&gpio_cfg_uart1c);
+            MXC_GPIO_Config(&gpio_cfg_uart1c);
             break;
         }
         MXC_SYS_ClockEnable(MXC_SYS_PERIPH_CLOCK_UART1);
@@ -168,11 +168,11 @@ int MXC_UART_SetFlowCtrl(mxc_uart_regs_t *uart, mxc_uart_flow_t flowCtrl, int rt
 {
     switch (MXC_UART_GET_IDX(uart)) {
     case 0:
-        MXC_SYS_GPIO_Config(&gpio_cfg_uart0_flow);
+        MXC_GPIO_Config(&gpio_cfg_uart0_flow);
         break;
 
     case 1:
-        MXC_SYS_GPIO_Config(&gpio_cfg_uart1_flow);
+        MXC_GPIO_Config(&gpio_cfg_uart1_flow);
         break;
     }
 

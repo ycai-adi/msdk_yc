@@ -98,9 +98,8 @@ __weak int PreInit(void)
 /* This function can be implemented by the application to initialize the board */
 __weak int Board_Init(void)
 {
-    // Configure the pins as setup by the Pin Mux GUI.  If the Pin Mux GUI has not
-    // been used, this function will do nothing.
-    return MXC_SYS_PinMuxUtil_Config();
+    /* Do nothing */
+    return 0;
 }
 
 /* This function is called just before control is transferred to main().

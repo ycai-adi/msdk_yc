@@ -291,26 +291,6 @@ int MXC_SYS_Clock_Timeout(uint32_t ready);
  */
 void MXC_SYS_Reset_Periph(mxc_sys_reset_t reset);
 
-/**
- * @brief      Configure GPIO pin(s).
- *
- * This function should not be called directly by application code.  It is a helper function
- * used by the peripheral libraries to initialize GPIO pins.
- *
- * @param      cfg   Pointer to configuration structure describing the pin.
- * @return     #E_NO_ERROR if everything is successful. See \ref MXC_Error_Codes for the list of error codes.
- */
-int MXC_SYS_GPIO_Config(const mxc_gpio_cfg_t *cfg);
-
-/**
- * @brief      Configures all GPIO pins as determined by the Pin Mux GUI.
- *
- * This function should not be called as part of the board initialization code.
- *
- * @return     #E_NO_ERROR if everything is successful. See \ref MXC_Error_Codes for the list of error codes.
- */
-int MXC_SYS_PinMuxUtil_Config();
-
 #ifdef __cplusplus
 }
 #endif

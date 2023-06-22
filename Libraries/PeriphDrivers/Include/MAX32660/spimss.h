@@ -112,7 +112,7 @@ struct mxc_spimss_req {
  * @param     spi     Pointer to spi module to initialize.
  * @param     mode    SPI mode for clock phase and polarity.
  * @param     freq    Desired clock frequency.
- * @param     sys_cfg System configuration object. This field will be ignored if the PinMux GUI is used.
+ * @param     sys_cfg System configuration object
  *
  * @return \c #E_NO_ERROR if successful, appropriate error otherwise
  */

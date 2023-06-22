@@ -36,7 +36,6 @@
 #include "mxc_device.h"
 #include "mxc_assert.h"
 #include "pb.h"
-#include "mxc_sys.h"
 
 /******************************************************************************/
 int PB_Init(void)
@@ -46,7 +45,7 @@ int PB_Init(void)
 
     // Enable pushbutton inputs
     for (i = 0; i < num_pbs; i++) {
-        if (MXC_SYS_GPIO_Config(&pb_pin[i]) != E_NO_ERROR) {
+        if (MXC_GPIO_Config(&pb_pin[i]) != E_NO_ERROR) {
             retval = E_UNKNOWN;
         }
     }

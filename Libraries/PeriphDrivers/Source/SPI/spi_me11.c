@@ -65,7 +65,7 @@ int MXC_SPI_Init(mxc_spi_regs_t *spi, int masterMode, int quadModeUsed, int numS
         MXC_GCR->rst0 |= MXC_F_GCR_RST0_SPI0;
         while (MXC_GCR->rst0 & MXC_F_GCR_RST0_SPI0) {}
         MXC_GCR->pclk_dis0 &= ~(MXC_F_GCR_PCLK_DIS0_SPI0D);
-        MXC_SYS_GPIO_Config(&gpio_cfg_spi0);
+        MXC_GPIO_Config(&gpio_cfg_spi0);
     } else {
         return E_NO_DEVICE;
     }
