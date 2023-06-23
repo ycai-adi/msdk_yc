@@ -79,7 +79,7 @@ int Board_Init(void)
 {
     int err;
 
-    if ((err = MXC_GPIO_InitAll() < E_NO_ERROR) {
+    if ((err = MXC_GPIO_InitAll()) < E_NO_ERROR) {
         return err;
     }
 

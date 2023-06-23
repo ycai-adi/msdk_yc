@@ -185,19 +185,19 @@ int MXC_GPIO_Reset(uint32_t portMask);
  * one step. New implementations should lock the GPIO state (MXC_GPIO_LockConfig()) before returning.
  * @return     #E_NO_ERROR if everything is successful. See \ref MXC_Error_Codes for the list of error codes.
  */
-int MXC_GPIO_InitAll()
+int MXC_GPIO_InitAll();
 
 /**
  * @brief      Locks the GPIO configuration so that calls to MXC_GPIO_Config() have no effect.
  * See also MXC_GPIO_Config, MXC_GPIO_Config_Direct(), and MXC_GPIO_UnlockConfig()
  */
-void MXC_GPIO_LockConfig()
+void MXC_GPIO_LockConfig();
 
 /**
  * @brief      Unlocks the GPIO configuration so that calls to MXC_GPIO_Config() have an effect.
  * See also MXC_GPIO_Config, MXC_GPIO_Config_Direct(), and MXC_GPIO_LockConfig()
  */
-void MXC_GPIO_UnlockConfig()
+void MXC_GPIO_UnlockConfig();
 
 /**
  * @brief      Configure GPIO pin(s) only if the GPIO configuration is not locked.
@@ -205,7 +205,7 @@ void MXC_GPIO_UnlockConfig()
  * @param      cfg   Pointer to configuration structure describing the pin.
  * @return     #E_NO_ERROR if everything is successful. See \ref MXC_Error_Codes for the list of error codes.
  */
-int MXC_GPIO_Config(const mxc_gpio_cfg_t *cfg)
+int MXC_GPIO_Config(const mxc_gpio_cfg_t *cfg);
 
 /**
  * @brief      Configure GPIO pin(s) regardless of their lock state.  \sa  MXC_GPIO_Config_Direct
@@ -213,7 +213,7 @@ int MXC_GPIO_Config(const mxc_gpio_cfg_t *cfg)
  * @param      cfg   Pointer to configuration structure describing the pin.
  * @return     #E_NO_ERROR if everything is successful. See \ref MXC_Error_Codes for the list of error codes.
  */
-int MXC_GPIO_Config_Direct(const mxc_gpio_cfg_t *cfg)
+int MXC_GPIO_Config_Direct(const mxc_gpio_cfg_t *cfg);
 
 /**
  * @brief      Gets the pin(s) input state.

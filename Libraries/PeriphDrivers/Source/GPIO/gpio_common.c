@@ -127,8 +127,10 @@ void MXC_GPIO_UnlockConfig()
 
 int MXC_GPIO_Config(const mxc_gpio_cfg_t *cfg)
 {
-    if(!gpio_cfg_locked)
-    {
-        MXC_GPIO_Config_Direct(cfg);
+    if(!gpio_cfg_locked) {
+        return MXC_GPIO_Config_Direct(cfg);
+    } else {
+    	return E_NO_ERROR;
     }
+
 }
