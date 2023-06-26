@@ -25,7 +25,14 @@
 #define EXAMPLES_MAX32655_BLE_DUAL_MAIN_H_
 #include "wsf_os.h"
 
+// TODO : 
 void oobRxCback(void);
+
+
+// WIP :
+void ServerClientStart(void);
+
+// WORKING :
 
 
 #endif // EXAMPLES_MAX32655_BLE_DATC_DATC_API_H_

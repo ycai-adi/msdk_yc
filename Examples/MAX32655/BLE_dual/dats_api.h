@@ -65,6 +65,10 @@ void DatsHandlerInit(wsfHandlerId_t handlerId);
 /*************************************************************************************************/
 void DatsHandler(wsfEventMask_t event, wsfMsgHdr_t *pMsg);
 
+
+void datsDmCback(dmEvt_t *pDmEvt);
+
+void datsAttCback(attEvt_t *pEvt);
 #ifdef __cplusplus
 };
 #endif

@@ -65,6 +65,12 @@ void DatcHandlerInit(wsfHandlerId_t handlerId);
 /*************************************************************************************************/
 void DatcHandler(wsfEventMask_t event, wsfMsgHdr_t *pMsg);
 
+void datcDmCback(dmEvt_t *pDmEvt);
+
+void datcAttCback(attEvt_t *pEvt);
+
+void datcInitSvcHdlList();
+
 #ifdef __cplusplus
 };
 #endif

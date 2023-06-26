@@ -60,11 +60,26 @@
 #include "sec_api.h"
 #include "svc_wp.h"
 
+#include "datc_api.h"
+#include "dats_api.h"
 #include "dual_main.h"
+
+
 /* LESC OOB configuration */
 static dmSecLescOobCfg_t *datcOobCfg;
+
+extern void setAdvTxPower(void);
+
 /* OOB Connection identifier */
 dmConnId_t oobConnId;
+bool_t isClient = TRUE;
+extern datcCb_t datcCb;
+extern datsCb_t datsCb;
+
+/* Timer for trimming of the 32 kHz crystal */
+wsfTimer_t trimTimer;
+
+
 /*************************************************************************************************/
 /*!
  *  \brief  OOB RX callback.
@@ -72,7 +87,7 @@ dmConnId_t oobConnId;
  *  \return None.
  */
 /*************************************************************************************************/
-// TODO: Need to think how oob pairing works in dual mode
+// TODO: Need to consider how oob pairing works in dual mode
 void oobRxCback(void)
 {
     if (datcOobCfg != NULL) {
@@ -80,4 +95,91 @@ void oobRxCback(void)
     }
 
     DmSecAuthRsp(oobConnId, 0, NULL);
+}
+
+static void dualDmCback(dmEvt_t *pDmEvt, bool isClient)
+{
+    dmEvt_t *pMsg;
+    uint16_t len;
+    uint16_t reportLen;
+
+    if (pDmEvt->hdr.event == DM_SEC_ECC_KEY_IND) {
+        DmSecSetEccKey(&pDmEvt->eccMsg.data.key);
+        APP_TRQACE_INFO0("DM_SEC_ECC_KEY_IND");
+        /* If the local device sends OOB data. */
+       // if (isClient ? datcSendOobData : datsSendOobData) {
+            // uint8_t oobLocalRandom[SMP_RAND_LEN];
+            // SecRand(oobLocalRandom, SMP_RAND_LEN);
+            // DmSecCalcOobReq(oobLocalRandom, pDmEvt->eccMsg.data.key.pubKey_x);
+
+            // /* Setup HCI UART for OOB */
+            // PalUartConfig_t hciUartCfg;
+            // hciUartCfg.rdCback = oobRxCback;
+            // hciUartCfg.wrCback = NULL;
+            // hciUartCfg.baud = OOB_BAUD;
+            // hciUartCfg.hwFlow = OOB_FLOW;
+
+            // PalUartInit(PAL_UART_ID_CHCI, &hciUartCfg);
+      //  }
+    } else if (pDmEvt->hdr.event == DM_SEC_CALC_OOB_IND) {
+        APP_TRQACE_INFO0("DM_SEC_CALC_OOB_IND");
+        // TODO: OOB
+        // this needs to happen in dual_main.c
+       
+    } else {
+        len = DmSizeOfEvt(pDmEvt);
+
+        if (isClient && pDmEvt->hdr.event == DM_SCAN_REPORT_IND) {
+            reportLen = pDmEvt->scanReport.len;
+        } else {
+            reportLen = 0;
+        }
+
+        if ((pMsg = WsfMsgAlloc(len + reportLen)) != NULL) {
+            memcpy(pMsg, pDmEvt, len);
+            if (isClient && pDmEvt->hdr.event == DM_SCAN_REPORT_IND) {
+                pMsg->scanReport.pData = (uint8_t *)((uint8_t *)pMsg + len);
+                memcpy(pMsg->scanReport.pData, pDmEvt->scanReport.pData, reportLen);
+            }
+            WsfMsgSend(isClient ? datcCb.handlerId : datsCb.handlerId, pMsg);
+        }
+    }
+}
+
+static void dmCback(dmEvt_t *pDmEvt)
+{
+    //send event to propper handler
+    if(isClient)
+    {
+        datcDmCback(pDmEvt);
+    }
+    else{
+        datsDmCback(pDmEvt);
+    }
+}
+
+static void attCback(attEvt_t *pEvt)
+{
+    if(isClient)
+    {
+        datcAttCback(pEvt);
+    }
+    else{
+        datsAttCback(pEvt);
+    }
+}
+
+void ServerClientStart(void)
+{
+    // Register common
+    DmRegister((dmCback));
+    AttRegister(attCback);
+    DmConnRegister(DM_CLIENT_ID_APP, dmCback);
+    // Start server
+    DatsStart();
+
+
+    // Start client
+    DatcStart(); 
+
 }

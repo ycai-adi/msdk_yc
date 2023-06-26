@@ -51,7 +51,6 @@
 #include "pal_uart.h"
 #include "tmr.h"
 #include "svc_sds.h"
-#include "dual_main.h"
 /**************************************************************************************************
   Macros
 **************************************************************************************************/
@@ -128,6 +127,9 @@ static const appSecCfg_t datsSecCfg = {
 
 /*! TRUE if Out-of-band pairing data is to be sent */
 static const bool_t datsSendOobData = FALSE;
+
+/* OOB Connection identifier */
+dmConnId_t oobConnId;
 
 /*! SMP security parameter configuration 
 *
@@ -252,6 +254,22 @@ extern void setAdvTxPower(void);
 
 /*************************************************************************************************/
 /*!
+ *  \brief  OOB RX callback.
+ *
+ *  \return None.
+ */
+/*************************************************************************************************/
+void oobRxCback(void)
+{
+    if (datsOobCfg != NULL) {
+        DmSecSetOob(oobConnId, datsOobCfg);
+    }
+
+    DmSecAuthRsp(oobConnId, 0, NULL);
+}
+
+/*************************************************************************************************/
+/*!
  *  \brief  Send notification containing data.
  *
  *  \param  connId      DM connection ID.
@@ -278,7 +296,7 @@ static void datsSendData(dmConnId_t connId)
  *  \return None.
  */
 /*************************************************************************************************/
-static void datsDmCback(dmEvt_t *pDmEvt)
+void datsDmCback(dmEvt_t *pDmEvt)
 {
     dmEvt_t *pMsg;
     uint16_t len;
@@ -302,23 +320,21 @@ static void datsDmCback(dmEvt_t *pDmEvt)
             PalUartInit(PAL_UART_ID_CHCI, &hciUartCfg);
         }
     } else if (pDmEvt->hdr.event == DM_SEC_CALC_OOB_IND) {
-        // TODO: OOB
-        // this needs to happen in dual_main.c 
-        // if (datsOobCfg == NULL) {
-        //     datsOobCfg = WsfBufAlloc(sizeof(dmSecLescOobCfg_t));
-        //     memset(datsOobCfg, 0, sizeof(dmSecLescOobCfg_t));
-        // }
+        if (datsOobCfg == NULL) {
+            datsOobCfg = WsfBufAlloc(sizeof(dmSecLescOobCfg_t));
+            memset(datsOobCfg, 0, sizeof(dmSecLescOobCfg_t));
+        }
 
-        // if (datsOobCfg) {
-        //     Calc128Cpy(datsOobCfg->localConfirm, pDmEvt->oobCalcInd.confirm);
-        //     Calc128Cpy(datsOobCfg->localRandom, pDmEvt->oobCalcInd.random);
+        if (datsOobCfg) {
+            Calc128Cpy(datsOobCfg->localConfirm, pDmEvt->oobCalcInd.confirm);
+            Calc128Cpy(datsOobCfg->localRandom, pDmEvt->oobCalcInd.random);
 
-        //     /* Start the RX for the peer OOB data */
-        //     PalUartReadData(PAL_UART_ID_CHCI, datsOobCfg->peerRandom,
-        //                     (SMP_RAND_LEN + SMP_CONFIRM_LEN));
-        // } else {
-        //     APP_TRACE_ERR0("Error allocating OOB data");
-        // }
+            /* Start the RX for the peer OOB data */
+            PalUartReadData(PAL_UART_ID_CHCI, datsOobCfg->peerRandom,
+                            (SMP_RAND_LEN + SMP_CONFIRM_LEN));
+        } else {
+            APP_TRACE_ERR0("Error allocating OOB data");
+        }
     } else {
         len = DmSizeOfEvt(pDmEvt);
 
@@ -338,7 +354,7 @@ static void datsDmCback(dmEvt_t *pDmEvt)
  *  \return None.
  */
 /*************************************************************************************************/
-static void datsAttCback(attEvt_t *pEvt)
+void datsAttCback(attEvt_t *pEvt)
 {
     attEvt_t *pMsg;
 
@@ -667,8 +683,7 @@ static void datsProcMsg(dmEvt_t *pMsg)
             dmConnId_t connId = (dmConnId_t)pMsg->hdr.param;
 
             APP_TRACE_INFO0("Sending OOB data");
-            // TODO: OOB
-            //oobConnId = connId;
+            oobConnId = connId;
 
             /* Start the TX to send the local OOB data */
             PalUartWriteData(PAL_UART_ID_CHCI, datsOobCfg->localRandom,

@@ -50,7 +50,6 @@
 #include "pal_uart.h"
 #include "tmr.h"
 #include "sdsc_api.h"
-#include "dual_main.h"
 /**************************************************************************************************
 Macros
 **************************************************************************************************/
@@ -156,6 +155,9 @@ static const appSecCfg_t datcSecCfg = {
 /*! TRUE if Out-of-band pairing data is to be sent */
 static const bool_t datcSendOobData = FALSE;
 
+/* OOB Connection identifier */
+dmConnId_t oobConnId;
+
 /*! SMP security parameter configuration 
 *
 *   I/O Capability Codes to be set for 
@@ -254,6 +256,8 @@ static uint16_t *pDatcGapHdlList[DM_CONN_MAX];
 static uint16_t *pDatcWpHdlList[DM_CONN_MAX];
 static uint16_t *pSecDatHdlList[DM_CONN_MAX];
 
+/* LESC OOB configuration */
+static dmSecLescOobCfg_t *datcOobCfg;
 
 /**************************************************************************************************
   ATT Client Configuration Data
@@ -295,6 +299,22 @@ WSF_CT_ASSERT(DATC_DISC_CFG_LIST_LEN <= DATC_DISC_HDL_LIST_LEN);
 
 /*************************************************************************************************/
 /*!
+ *  \brief  OOB RX callback.
+ *
+ *  \return None.
+ */
+/*************************************************************************************************/
+void oobRxCback(void)
+{
+    if (datcOobCfg != NULL) {
+        DmSecSetOob(oobConnId, datcOobCfg);
+    }
+
+    DmSecAuthRsp(oobConnId, 0, NULL);
+}
+
+/*************************************************************************************************/
+/*!
  *  \brief  Application DM callback.
  *
  *  \param  pDmEvt  DM callback event
@@ -302,7 +322,7 @@ WSF_CT_ASSERT(DATC_DISC_CFG_LIST_LEN <= DATC_DISC_HDL_LIST_LEN);
  *  \return None.
  */
 /*************************************************************************************************/
-static void datcDmCback(dmEvt_t *pDmEvt)
+void datcDmCback(dmEvt_t *pDmEvt)
 {
     dmEvt_t *pMsg;
     uint16_t len;
@@ -327,23 +347,21 @@ static void datcDmCback(dmEvt_t *pDmEvt)
             PalUartInit(PAL_UART_ID_CHCI, &hciUartCfg);
         }
     } else if (pDmEvt->hdr.event == DM_SEC_CALC_OOB_IND) {
-        // TODO: OOB
-        // this needs to happen in dual_main.c
-        // if (datcOobCfg == NULL) {
-        //     datcOobCfg = WsfBufAlloc(sizeof(dmSecLescOobCfg_t));
-        //     memset(datcOobCfg, 0, sizeof(dmSecLescOobCfg_t));
-        // }
+        if (datcOobCfg == NULL) {
+            datcOobCfg = WsfBufAlloc(sizeof(dmSecLescOobCfg_t));
+            memset(datcOobCfg, 0, sizeof(dmSecLescOobCfg_t));
+        }
 
-        // if (datcOobCfg) {
-        //     Calc128Cpy(datcOobCfg->localConfirm, pDmEvt->oobCalcInd.confirm);
-        //     Calc128Cpy(datcOobCfg->localRandom, pDmEvt->oobCalcInd.random);
+        if (datcOobCfg) {
+            Calc128Cpy(datcOobCfg->localConfirm, pDmEvt->oobCalcInd.confirm);
+            Calc128Cpy(datcOobCfg->localRandom, pDmEvt->oobCalcInd.random);
 
-        //     /* Start the RX for the peer OOB data */
-        //     PalUartReadData(PAL_UART_ID_CHCI, datcOobCfg->peerRandom,
-        //                     (SMP_RAND_LEN + SMP_CONFIRM_LEN));
-        // } else {
-        //     APP_TRACE_ERR0("Error allocating OOB data");
-        // }
+            /* Start the RX for the peer OOB data */
+            PalUartReadData(PAL_UART_ID_CHCI, datcOobCfg->peerRandom,
+                            (SMP_RAND_LEN + SMP_CONFIRM_LEN));
+        } else {
+            APP_TRACE_ERR0("Error allocating OOB data");
+        }
     } else {
         len = DmSizeOfEvt(pDmEvt);
 
@@ -373,7 +391,7 @@ static void datcDmCback(dmEvt_t *pDmEvt)
  *  \return None.
  */
 /*************************************************************************************************/
-static void datcAttCback(attEvt_t *pEvt)
+void datcAttCback(attEvt_t *pEvt)
 {
     attEvt_t *pMsg;
 
@@ -1141,13 +1159,11 @@ static void datcProcMsg(dmEvt_t *pMsg)
             dmConnId_t connId = (dmConnId_t)pMsg->hdr.param;
 
             APP_TRACE_INFO0("Sending OOB data");
-            // TODO : OOB
-            //oobConnId = connId;
+            oobConnId = connId;
 
             /* Start the TX to send the local OOB data */
-            // TODO: OOB
-            // PalUartWriteData(PAL_UART_ID_CHCI, datcOobCfg->localRandom,
-            //                  (SMP_RAND_LEN + SMP_CONFIRM_LEN));
+            PalUartWriteData(PAL_UART_ID_CHCI, datcOobCfg->localRandom,
+                             (SMP_RAND_LEN + SMP_CONFIRM_LEN));
 
         } else {
             AppHandlePasskey(&pMsg->authReq);
@@ -1328,8 +1344,9 @@ void DatcHandler(wsfEventMask_t event, wsfMsgHdr_t *pMsg)
  *  \return None.
  */
 /*************************************************************************************************/
-static void datcInitSvcHdlList()
+void datcInitSvcHdlList()
 {
+    // TODO :  this probably should not assign this all connections
     uint8_t i;
 
     for (i = 0; i < DM_CONN_MAX; i++) {
