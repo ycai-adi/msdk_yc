@@ -43,10 +43,10 @@
 **************************************************************************************************/
 
 /*! \brief      Extended scan context for 1m */
-lctrExtScanCtx_t lctrMstExtScanOneMCtx;
+uint32_t lctrMstExtScanOneMCtx[0];
 
 /*! \brief      Extended scan context for coded */
-lctrExtScanCtx_t lctrMstExtScanCodedCtx;
+uint32_t lctrMstExtScanCodedCtx[0];
 
 /*! \brief      Extended scan operational context. */
 lctrExtScanCtx_t * lctrMstExtScanTbl[LCTR_SCAN_PHY_TOTAL] =
