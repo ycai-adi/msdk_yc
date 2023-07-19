@@ -60,7 +60,7 @@ extern "C" {
 #endif
 
 #ifndef LL_MAX_PER_SCAN
-#define LL_MAX_PER_SCAN         6       /*!< Absolute maximum number of periodic scanners (maximum is 32). */
+#define LL_MAX_PER_SCAN         1       /*!< Absolute maximum number of periodic scanners (maximum is 32). */
 #endif
 
 #ifndef LL_ENABLE_TESTER
