@@ -205,7 +205,7 @@ static const appCfg_t datcAppCfg = {
 /*! ATT configurable parameters (increase MTU) */
 static const attCfg_t datcAttCfg = {
     15, /* ATT server service discovery connection idle timeout in seconds */
-    241, /* desired ATT MTU */
+    ATT_MAX_MTU, /* desired ATT MTU */
     ATT_MAX_TRANS_TIMEOUT, /* transcation timeout in seconds */
     4 /* number of queued prepare writes supported by server */
 };
@@ -707,10 +707,14 @@ static void datcPrivAddDevToResListInd(dmEvt_t *pMsg)
 /*************************************************************************************************/
 static void datcSendData(dmConnId_t connId)
 {
-    uint8_t str[] = "hello world";
+    uint8_t *str = WsfMsgAlloc(512);
+    // Fill the buffer with a repeating sequence of characters '0' to '9'
+    for (int i = 0; i < 512; i++) {
+        str[i] = '0' + (i % 10);
+    }
 
     if (pDatcWpHdlList[connId - 1][WPC_P1_DAT_HDL_IDX] != ATT_HANDLE_NONE) {
-        AttcWriteCmd(connId, pDatcWpHdlList[connId - 1][WPC_P1_DAT_HDL_IDX], sizeof(str), str);
+        AttcWriteCmd(connId, pDatcWpHdlList[connId - 1][WPC_P1_DAT_HDL_IDX], 512, str);
     }
 }
 

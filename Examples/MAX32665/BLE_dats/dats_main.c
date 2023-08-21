@@ -184,7 +184,7 @@ static const appUpdateCfg_t datsUpdateCfg = {
 /*! ATT configurable parameters (increase MTU) */
 static const attCfg_t datsAttCfg = {
     15, /* ATT server service discovery connection idle timeout in seconds */
-    241, /* desired ATT MTU */
+    ATT_MAX_MTU, /* desired ATT MTU */
     ATT_MAX_TRANS_TIMEOUT, /* transcation timeout in seconds */
     4 /* number of queued prepare writes supported by server */
 };
@@ -280,11 +280,15 @@ void oobRxCback(void)
 /*************************************************************************************************/
 static void datsSendData(dmConnId_t connId)
 {
-    uint8_t str[] = "hello back";
+    uint8_t *str = WsfMsgAlloc(512);
+    // Fill the buffer with a repeating sequence of characters '0' to '9'
+    for (int i = 0; i < 512; i++) {
+        str[i] = '0' + (i % 10);
+    }
 
     if (AttsCccEnabled(connId, DATS_WP_DAT_CCC_IDX)) {
         /* send notification */
-        AttsHandleValueNtf(connId, WP_DAT_HDL, sizeof(str), str);
+        AttsHandleValueNtf(connId, WP_DAT_HDL, 512, str);
     }
 }
 
@@ -424,18 +428,14 @@ uint8_t datsWpWriteCback(dmConnId_t connId, uint16_t handle, uint8_t operation, 
                          uint16_t len, uint8_t *pValue, attsAttr_t *pAttr)
 {
     static uint32_t packetCount = 0;
-    if (len < 64) {
-        /* print received data if not a speed test message */
-        APP_TRACE_INFO0((const char *)pValue);
+  
+    APP_TRACE_INFO1("Recevied: %d bytes", len);
+    /* print received data*/
+    APP_TRACE_INFO0((const char *)pValue);
 
-        /* send back some data */
-        datsSendData(connId);
-    } else {
-        APP_TRACE_INFO1("Speed test packet Count [%d]", packetCount++);
-        if (packetCount >= 5000) {
-            packetCount = 0;
-        }
-    }
+    /* send back some data */
+    datsSendData(connId);
+    
     return ATT_SUCCESS;
 }
 

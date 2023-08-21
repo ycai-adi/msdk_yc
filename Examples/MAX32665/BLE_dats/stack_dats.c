@@ -87,7 +87,9 @@ void StackInitDats(void)
     SmpHandlerInit(handlerId);
     SmprInit();
     SmprScInit();
-    HciSetMaxRxAclLen(256);
+    //HciSetMaxRxAclLen(256);
+    HciSetMaxRxAclLen(ATT_MAX_MTU + L2C_HDR_LEN);
+
 
     handlerId = WsfOsSetNextHandler(AppHandler);
     AppHandlerInit(handlerId);
