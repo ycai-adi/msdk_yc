@@ -28,6 +28,7 @@
 #include "sch_api.h"
 #include "pal_bb.h"
 #include "wsf_assert.h"
+#include "wsf_trace.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -65,6 +66,8 @@ typedef struct
   uint16_t delayLoadWatermarkCount; /*!< Statistics: Delay loading watermark count. */
   uint16_t delayLoadCount;          /*!< Statistics: Delay loading count. */
   uint32_t delayLoadTotalCount;     /*!< Statistics: Delay loading total count. */
+
+  uint8_t cnt;
 } SchCtrlBlk_t;
 
 /**************************************************************************************************
@@ -93,12 +96,7 @@ void schRemoveHead(void);
  *  \return     TRUE if BOD time is in the future, FALSE otherwise.
  */
 /*************************************************************************************************/
-static inline bool_t schDueTimeInFuture(BbOpDesc_t *pBod)
-{
-  const uint32_t curTime = PalBbGetCurrentTime();
-
-  return (BbGetTargetTimeDelta(pBod->dueUsec, curTime) > 0);
-}
+bool_t schDueTimeInFuture(BbOpDesc_t *pBod);
 
 
 /*************************************************************************************************/

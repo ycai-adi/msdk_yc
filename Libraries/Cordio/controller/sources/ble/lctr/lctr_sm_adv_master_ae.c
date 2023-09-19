@@ -23,6 +23,7 @@
 /*************************************************************************************************/
 
 #include "lctr_int_adv_master_ae.h"
+#include "lctr_int_init_master_ae.h"
 #include "sch_api.h"
 #include "wsf_assert.h"
 #include "wsf_trace.h"
@@ -320,6 +321,9 @@ static const uint8_t lctrPerScanNextStateTbl[LCTR_PER_SCAN_STATE_TOTAL][LCTR_PER
   }
 };
 
+extern lctrExtScanCtrlBlk_t lctrMstExtScan;
+extern lctrExtInitCtrlBlk_t lctrMstExtInit;
+
 /*************************************************************************************************/
 /*!
  *  \brief      Execute master scan state machine.
@@ -349,7 +353,9 @@ void lctrMstExtScanExecuteSm(lctrExtScanCtx_t *pExtScanCtx, uint8_t event)
 /*************************************************************************************************/
 void lctrMstCreateSyncExecuteSm(uint8_t event)
 {
-  LL_TRACE_INFO2("lctrMstCreateSyncExecuteSm: state=%u, event=%u", lctrPerCreateSync.state, event);
+  //LL_TRACE_INFO2("lctrMstCreateSyncExecuteSm: state=%u, event=%u", lctrPerCreateSync.state, event);
+  APP_TRACE_INFO4("@?@ lctrMstCreateSyncExecuteSm: st=%u evt=%u phy %d %d",
+                 lctrPerCreateSync.state, event, lctrMstExtScan.enaPhys, lctrMstExtInit.enaPhys);
 
   if (lctrCreateSyncActionTbl[lctrPerCreateSync.state][event])
   {
@@ -368,7 +374,9 @@ void lctrMstCreateSyncExecuteSm(uint8_t event)
 /*************************************************************************************************/
 void lctrMstTransferSyncExecuteSm(uint8_t event)
 {
-  LL_TRACE_INFO2("lctrMstTransferSyncExecuteSm: state=%u, event=%u", lctrPerTransferSync.state, event);
+  //LL_TRACE_INFO2("lctrMstTransferSyncExecuteSm: state=%u, event=%u", lctrPerTransferSync.state, event);
+  APP_TRACE_INFO4("@?@ lctrMstTransferSyncExecuteSm: st=%u evt=%u phy %d %d",
+                 lctrPerTransferSync.state, event, lctrMstExtScan.enaPhys, lctrMstExtInit.enaPhys);
 
   if (lctrTransferSyncActionTbl[lctrPerTransferSync.state][event])
   {
@@ -388,7 +396,7 @@ void lctrMstTransferSyncExecuteSm(uint8_t event)
 /*************************************************************************************************/
 void lctrMstPerScanExecuteSm(lctrPerScanCtx_t *pPerScanCtx, uint8_t event)
 {
-  LL_TRACE_INFO2("lctrMstPerScanExecuteSm: state=%u, event=%u", pPerScanCtx->state, event);
+  LL_TRACE_INFO3("lctrMstPerScanExecuteSm: state=%u event=%u rxPhy=%d", pPerScanCtx->state, event, pPerScanCtx->rxPhys);
 
   if (lctrPerScanActionTbl[pPerScanCtx->state][event])
   {

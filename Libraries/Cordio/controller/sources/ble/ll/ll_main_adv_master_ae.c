@@ -173,7 +173,8 @@ void LlExtScanEnable(uint8_t enable, uint8_t filterDup, uint16_t duration, uint1
   uint32_t durMs = duration * durMsPerUnit;
   uint32_t perMs = period * perMsPerUnit;
 
-  LL_TRACE_INFO2("### LlApi ###  LlExtScanEnable: enable=%u, filterDup=%u", enable, filterDup);
+  //@?@ LL_TRACE_INFO2("### LlApi ###  LlExtScanEnable: enable=%u, filterDup=%u", enable, filterDup);
+  APP_TRACE_INFO2("@?@ ### LlApi ###  LlExtScanEnable enable=%u filterDup=%u", enable, filterDup);
 
   WSF_ASSERT(lmgrCb.extScanEnaDelayCnt == 0);
   lmgrCb.extScanEnaDelayCnt = lmgrCb.numExtScanPhys;

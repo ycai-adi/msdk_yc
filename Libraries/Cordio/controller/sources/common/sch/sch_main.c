@@ -225,6 +225,7 @@ void SchReset(void)
   schCb.schHandlerWatermarkUsec = 0;
   schCb.delayLoadWatermarkCount = 0;
   schCb.delayLoadTotalCount = 0;
+  schCb.cnt = 0;
 }
 
 /*************************************************************************************************/
@@ -254,6 +255,8 @@ void SchHandler(wsfEventMask_t event, wsfMsgHdr_t *pMsg)
       return;
     }
 
+    APP_TRACE_INFO5("@?@ %d cnt=%d evt=%d dueUsec=%d curr=%d", pBod, schCb.cnt, event, pBod->dueUsec/1000, startTime/1000);
+    
     if (event & SCH_EVENT_BOD_COMPLETE)
     {
       WSF_ASSERT(schCb.state == SCH_STATE_EXEC);
@@ -326,6 +329,26 @@ void SchHandler(wsfEventMask_t event, wsfMsgHdr_t *pMsg)
 
 /*************************************************************************************************/
 /*!
+ *  \brief      Is BOD due time in the future.
+ *
+ *  \param      pBod    Target BOD.
+ *
+ *  \return     TRUE if BOD time is in the future, FALSE otherwise.
+ */
+/*************************************************************************************************/
+bool_t schDueTimeInFuture(BbOpDesc_t *pBod)
+{
+  const uint32_t curTime = PalBbGetCurrentTime();
+  int32_t delta = BbGetTargetTimeDelta(pBod->dueUsec, curTime);
+  if (delta == 0)
+  {
+    APP_TRACE_INFO3("@?@ dueUsec=%d curTime=%d delta=%d", pBod->dueUsec, curTime, delta);
+  }
+  return (delta > 0);
+}
+
+/*************************************************************************************************/
+/*!
  *  \brief      Load BOD if not already started.
  *
  *  \param      pBod   BOD description.
@@ -349,7 +372,8 @@ static bool_t schLoadBod(BbOpDesc_t *pBod)
     }
     else
     {
-      LL_TRACE_WARN1("!!! BOD terminated on startup, pBod=0x%08x", pBod);
+      //LL_TRACE_WARN1("!!! BOD terminated on startup, pBod=0x%08x", pBod);
+      WsfTrace("@?@ !!! BOD terminated on startup, pBod=0x%08x", pBod);
 
       if (schCb.eventSetFlagCount)
       {
@@ -363,7 +387,8 @@ static bool_t schLoadBod(BbOpDesc_t *pBod)
   else
   {
     /* This might occur due to the delay of conflict resolution. */
-    LL_TRACE_ERR1("!!! Head element in the past, pBod=0x%08x", pBod);
+    //LL_TRACE_ERR1("!!! Head element in the past, pBod=0x%08x", pBod);
+    WsfTrace("@?@ !!! Head element in the past, pBod=%d", pBod);
   }
 
   return loaded;

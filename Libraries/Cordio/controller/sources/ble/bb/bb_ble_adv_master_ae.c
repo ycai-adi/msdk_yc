@@ -150,6 +150,7 @@ static void bbMstAuxScanTxCompCback(uint8_t status)
 /*************************************************************************************************/
 static void bbMstAuxScanRxCompCback(uint8_t status, int8_t rssi, uint32_t crc, uint32_t timestamp, uint8_t rxPhyOptions)
 {
+  APP_TRACE_INFO0("@?@ bbMstAuxScanRxCompCback");
   BB_ISR_START();
 
   WSF_ASSERT(BbGetCurrentBod());
@@ -508,6 +509,7 @@ static void bbMstAuxScanRxCompCback(uint8_t status, int8_t rssi, uint32_t crc, u
 /*************************************************************************************************/
 static void bbMstExecuteAuxScanOp(BbOpDesc_t *pBod, BbBleData_t *pBle)
 {
+  APP_TRACE_INFO0("@?@ bbMstExecuteAuxScanOp");
   BbBleMstAuxAdvEvent_t * const pAuxScan = &pBod->prot.pBle->op.mstAuxAdv;
 
   PalBbBleSetChannelParam(&pBle->chan);

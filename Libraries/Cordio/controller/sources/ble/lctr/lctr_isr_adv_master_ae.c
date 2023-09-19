@@ -48,6 +48,7 @@
 /**************************************************************************************************
   Global Variables
 **************************************************************************************************/
+extern uint8_t gu8Debug;
 
 /*! \brief      Transitive context (valid only for a single Advertising Event). */
 struct
@@ -865,6 +866,8 @@ bool_t lctrMstDiscoverRxExtAdvPktHandler(BbOpDesc_t *pOp, const uint8_t *pAdvBuf
 
   bool_t txScanReq = FALSE;
 
+  APP_TRACE_INFO1("@?@ lctrMstDiscoverRxExtAdvPktHandler pduType=%d", advHdr.pduType);
+
   switch (advHdr.pduType)
   {
     case LL_PDU_ADV_EXT_IND:
@@ -892,6 +895,8 @@ void lctrMstDiscoverRxExtAdvPktPostProcessHandler(BbOpDesc_t *pOp, const uint8_t
 {
   WSF_ASSERT(pOp->protId == BB_PROT_BLE);
   WSF_ASSERT(pOp->prot.pBle->chan.opType == BB_BLE_OP_MST_ADV_EVENT);
+
+  APP_TRACE_INFO0("@?@ lctrMstDiscoverRxExtAdvPktPostProcessHandler");
 
   BbBleData_t * const pBle = pOp->prot.pBle;
   BbBleMstAdvEvent_t * const pScan = &pBle->op.mstAdv;
@@ -1123,6 +1128,7 @@ void lctrMstDiscoverRxExtAdvPktPostProcessHandler(BbOpDesc_t *pOp, const uint8_t
 /*************************************************************************************************/
 bool_t lctrMstDiscoverRxAuxAdvPktHandler(BbOpDesc_t *pOp, const uint8_t *pAdvBuf)
 {
+  APP_TRACE_INFO0("@?@ lctrMstDiscoverRxAuxAdvPktHandler");
   WSF_ASSERT(pOp->protId == BB_PROT_BLE);
   WSF_ASSERT(pOp->prot.pBle->chan.opType == BB_BLE_OP_MST_AUX_ADV_EVENT);
 
@@ -1848,6 +1854,7 @@ static void lctrMstExtDiscoverReschedule(lctrExtScanCtx_t *pExtScanCtx)
 {
   lctrExtScanCtx_t *pNextScanCtx = pExtScanCtx;
   BbOpDesc_t *pOp = &pExtScanCtx->scanBod;
+  APP_TRACE_INFO2("@?@ lctrMstExtDiscoverReschedule %d dueUsec=%d", pOp, pExtScanCtx->scanWinStartUsec);
   BbBleData_t *pBle = pOp->prot.pBle;
   BbBleMstAdvEvent_t *pScan = &pBle->op.mstAdv;
   uint8_t scanPhyIndex = (LCTR_GET_EXT_SCAN_HANDLE(pExtScanCtx) == LCTR_SCAN_PHY_CODED) ? LCTR_SCAN_PHY_CODED : LCTR_SCAN_PHY_1M;
@@ -1953,6 +1960,9 @@ static void lctrMstExtDiscoverReschedule(lctrExtScanCtx_t *pExtScanCtx)
 /*************************************************************************************************/
 void lctrMstExtDiscoverEndOp(BbOpDesc_t *pOp)
 {
+  APP_TRACE_INFO2("@?@ lctrMstExtDiscoverEndOp %d %d", pOp, pOp->dueUsec/1000);
+  gu8Debug = 1;
+
   lctrExtScanCtx_t * const pExtScanCtx = pOp->pCtx;
   const uint8_t scanPhyIndex = (LCTR_GET_EXT_SCAN_HANDLE(pExtScanCtx) == LCTR_SCAN_PHY_CODED) ? LCTR_SCAN_PHY_CODED : LCTR_SCAN_PHY_1M;
 
@@ -2007,6 +2017,7 @@ void lctrMstExtDiscoverAbortOp(BbOpDesc_t *pOp)
 /*************************************************************************************************/
 void lctrMstAuxDiscoverEndOp(BbOpDesc_t *pOp)
 {
+  APP_TRACE_INFO2("@?@ lctrMstAuxDiscoverEndOp %d dueUsec=%d", pOp, pOp->dueUsec);
   lctrExtScanCtx_t * const pExtScanCtx = pOp->pCtx;
   const uint8_t scanPhyIndex = (LCTR_GET_EXT_SCAN_HANDLE(pExtScanCtx) == LCTR_SCAN_PHY_CODED) ? LCTR_SCAN_PHY_CODED : LCTR_SCAN_PHY_1M;
 
@@ -2014,6 +2025,7 @@ void lctrMstAuxDiscoverEndOp(BbOpDesc_t *pOp)
   {
     lctrActiveExtScan.scanMask &= ~(1 << scanPhyIndex);
     lctrSendExtScanMsg(pExtScanCtx, LCTR_EXT_SCAN_MSG_TERMINATE);
+    APP_TRACE_INFO0("@?@ Terminate");
     return;
   }
 

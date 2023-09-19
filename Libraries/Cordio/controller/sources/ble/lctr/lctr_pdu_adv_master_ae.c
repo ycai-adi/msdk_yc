@@ -25,6 +25,7 @@
 #include "lctr_pdu_adv_ae.h"
 #include "lctr_pdu_adv.h"
 #include "util/bstream.h"
+#include "wsf_trace.h"
 
 /*************************************************************************************************/
 /*!
@@ -57,6 +58,7 @@ uint8_t lctrUnpackExtAdvHeader(lctrExtAdvHdr_t *pPdu, uint8_t *pNewFlags, const 
   {
     uint8_t extHdrFlags;
     BSTREAM_TO_UINT8(extHdrFlags, pBuf);
+    APP_TRACE_INFO3("@?@ len=%d mode=%d flag=0x%X", pPdu->extHdrLen, pPdu->advMode, extHdrFlags);
     *pNewFlags = extHdrFlags;
     pPdu->extHdrFlags |= extHdrFlags;
 

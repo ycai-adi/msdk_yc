@@ -40,6 +40,14 @@
 #include "cmsis_os2.h"
 #endif
 
+#define DBG_EVT           1
+
+#if DBG_EVT == 1
+#define EVT_DBG_BUF_SIZE  64
+uint8_t evt_dbg_buf[EVT_DBG_BUF_SIZE];
+uint32_t evt_dbg_ndx = 0;
+#endif  // DBG_EVT
+
 /**************************************************************************************************
   Compile time assert checks
 **************************************************************************************************/
@@ -52,11 +60,6 @@ WSF_CT_ASSERT(sizeof(uint32_t) == 4);
   Macros
 **************************************************************************************************/
 
-/* maximum number of event handlers per task */
-#ifndef WSF_MAX_HANDLERS
-#define WSF_MAX_HANDLERS                          16
-#endif
-
 #if WSF_OS_DIAG == TRUE
 #define WSF_OS_SET_ACTIVE_HANDLER_ID(id)          (WsfActiveHandler = id);
 #else
@@ -68,30 +71,15 @@ WSF_CT_ASSERT(sizeof(uint32_t) == 4);
 #define WSF_OS_THREAD_SLEEP_WAKEUP_FLAG           0x0001
 #endif
 
-/*! \brief OS serivice function number */
-#define WSF_OS_MAX_SERVICE_FUNCTIONS                  3
-
 /**************************************************************************************************
   Data Types
 **************************************************************************************************/
 
-/*! \brief  Task structure */
-typedef struct
-{
-  wsfEventHandler_t     handler[WSF_MAX_HANDLERS];
-  wsfEventMask_t        handlerEventMask[WSF_MAX_HANDLERS];
-  wsfQueue_t            msgQueue;
-  wsfTaskEvent_t        taskEventMask;
-  uint8_t               numHandler;
-} wsfOsTask_t;
-
-/*! \brief  OS structure */
-typedef struct
-{
-  wsfOsTask_t                 task;
-  WsfOsIdleCheckFunc_t        sleepCheckFuncs[WSF_OS_MAX_SERVICE_FUNCTIONS];
-  uint8_t                     numFunc;
-} wsfOs_t;
+/**************************************************************************************************
+  Global Variables
+**************************************************************************************************/
+uint8_t gu8Debug = 0;
+extern uint8_t msg_ndx;
 
 /**************************************************************************************************
   Local Variables
@@ -324,7 +312,18 @@ void wsfOsDispatcher(void)
         pTask->handlerEventMask[i] = 0;
         WSF_OS_SET_ACTIVE_HANDLER_ID(i);
         WSF_CS_EXIT(cs);
-
+#if DBG_EVT == 1
+        //APP_TRACE_INFO2("@?@ hndlr=%d evtMsk=%d", i, eventMask);
+        if (gu8Debug)
+        {
+          evt_dbg_buf[evt_dbg_ndx++] = i;
+          evt_dbg_buf[evt_dbg_ndx++] = eventMask;
+          if (evt_dbg_ndx >= EVT_DBG_BUF_SIZE - 2)
+          {
+            evt_dbg_ndx = 0;
+          }
+        }
+#endif
         (*pTask->handler[i])(eventMask, NULL);
       }
     }

@@ -134,6 +134,7 @@ static uint32_t bbBleCalcScanDurationUsec(BbOpDesc_t *pBod, BbBleMstAdvEvent_t *
 /*************************************************************************************************/
 static bool_t bbContScanOp(BbOpDesc_t *pBod, BbBleMstAdvEvent_t *pScan)
 {
+  APP_TRACE_INFO0("@?@ bbContScanOp");
   if (BbGetBodTerminateFlag())
   {
     /* Client terminated. */
@@ -307,12 +308,14 @@ static void bbMstScanTxCompCback(uint8_t status)
 /*************************************************************************************************/
 static void bbMstScanRxCompCback(uint8_t status, int8_t rssi, uint32_t crc, uint32_t timestamp, uint8_t rxPhyOptions)
 {
+  BbOpDesc_t * pCur = BbGetCurrentBod();
   BB_ISR_START();
 
   WSF_ASSERT(BbGetCurrentBod());
 
-  BbOpDesc_t * const pCur = BbGetCurrentBod();
+  /*BbOpDesc_t * const */pCur = BbGetCurrentBod();
   BbBleData_t * const pBle = pCur->prot.pBle;
+  APP_TRACE_INFO4("@?@ bbMstScanRxCompCback Bod=%d chan=%d %d st=%d", pCur, pBle->chan.chanIdx, bbBleCb.evtState, status);
   BbBleMstAdvEvent_t * const pScan = &pBle->op.mstAdv;
 
   bool_t bodComplete = FALSE;
@@ -345,7 +348,7 @@ static void bbMstScanRxCompCback(uint8_t status, int8_t rssi, uint32_t crc, uint
           pScan->advRxPhyOptions = rxPhyOptions;
 
           bool_t pduAllow = BbBlePduFiltCheck(pScan->pRxAdvBuf, &pBle->pduFilt, FALSE, &pScan->filtResults);
-
+          APP_TRACE_INFO1("@?@ pduAllow=%d", pduAllow);
           if (pduAllow && pScan->rxAdvCback(pCur, pScan->pRxAdvBuf))
           {
             WSF_ASSERT(pScan->pTxReqBuf);
@@ -374,7 +377,7 @@ static void bbMstScanRxCompCback(uint8_t status, int8_t rssi, uint32_t crc, uint
 
           if (pduAllow && pScan->rxAdvPostCback)
           {
-            pScan->rxAdvPostCback(pCur, pScan->pRxAdvBuf);
+            pScan->rxAdvPostCback(pCur, pScan->pRxAdvBuf);  // lctrMstDiscoverRxExtAdvPktPostProcessHandler
           }
 
           break;
@@ -520,6 +523,7 @@ static void bbMstScanRxCompCback(uint8_t status, int8_t rssi, uint32_t crc, uint
 /*************************************************************************************************/
 static void bbMstExecuteScanOp(BbOpDesc_t *pBod, BbBleData_t *pBle)
 {
+  APP_TRACE_INFO1("@?@ bbMstExecuteScanOp   Bod=%d", pBod);
   BbBleMstAdvEvent_t * const pScan = &pBod->prot.pBle->op.mstAdv;
 
   if (pScan->preExecCback)

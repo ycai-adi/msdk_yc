@@ -42,6 +42,8 @@ typedef struct wsfMsg_tag
   wsfHandlerId_t      handlerId;
 } wsfMsg_t;
 
+uint8_t msg_ndx = 0;
+
 /*************************************************************************************************/
 /*!
  *  \brief  Allocate a data message buffer to be sent with WsfMsgSend().
@@ -123,6 +125,16 @@ void WsfMsgSend(wsfHandlerId_t handlerId, void *pMsg)
 /*************************************************************************************************/
 void WsfMsgEnq(wsfQueue_t *pQueue, wsfHandlerId_t handlerId, void *pMsg)
 {
+  wsfMsgHdr_t *h = (wsfMsgHdr_t *)pMsg;
+  h->msg_ndx = ++msg_ndx;
+  //if (msg_ndx == 25)
+  if (msg_ndx > 100 && handlerId == 4 && h->param == 0 && h->event == 16)
+  {
+    __asm("nop");
+    __asm("nop");
+  }
+  WSF_TRACE_MSG5("msg_enq %03d hndrId=%u p=0x%04X evt=%03d st=%d", h->msg_ndx, handlerId, h->param, h->event, h->status);
+  
   wsfMsg_t    *p;
 
   WSF_ASSERT(pMsg != NULL);
@@ -156,6 +168,16 @@ void *WsfMsgDeq(wsfQueue_t *pQueue, wsfHandlerId_t *pHandlerId)
 
     /* hide header */
     pMsg++;
+
+    /*
+    uint8_t *pData = (uint8_t *)pMsg;
+    APP_TRACE_INFO6("msg_deq %03d hndrId=%d p=0x%02X%02X evt=%03d st=%d", pData[4], *pHandlerId, pData[1], pData[0], pData[2], pData[3]);
+    if (pData[4] == 26)
+    {
+      __asm("nop");
+      __asm("nop");
+    }
+    */
   }
 
   return pMsg;
