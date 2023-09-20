@@ -36,7 +36,6 @@
 /**************************************************************************************************
   Global Variables
 **************************************************************************************************/
-uint8_t gu8CodedPhyAuxScan = 0;
 extern lmgrCtrlBlk_t lmgrCb;
 
 /**************************************************************************************************
@@ -273,8 +272,6 @@ void dmExtScanReset(void)
 /*************************************************************************************************/
 void dmExtScanHciHandler(hciEvt_t *pEvent)
 {
-  DM_TRACE_INFO2("dmExtScanHciHandler: event: %d state: %d", pEvent->hdr.event, dmScanCb.scanState);
-
   if (pEvent->hdr.event == HCI_LE_EXT_ADV_REPORT_CBACK_EVT)
   {
     dmExtScanActHciReport(pEvent);

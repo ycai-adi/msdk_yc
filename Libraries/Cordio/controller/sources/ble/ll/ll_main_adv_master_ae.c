@@ -33,7 +33,7 @@
 #include "wsf_msg.h"
 #include "wsf_trace.h"
 
-extern uint8_t gu8CodedPhyAuxScan;
+extern uint8_t appCodedPhy;
 
 /*************************************************************************************************/
 /*!
@@ -171,7 +171,7 @@ void LlExtScanEnable(uint8_t enable, uint8_t filterDup, uint16_t duration, uint1
   const unsigned int perMsPerUnit = 1280;
   unsigned int filterDupMax;
   
-  if (gu8CodedPhyAuxScan)
+  if (appCodedPhy)
   {
     filterDupMax = LL_SCAN_FILTER_DUP_DISABLE;
   }
@@ -184,9 +184,8 @@ void LlExtScanEnable(uint8_t enable, uint8_t filterDup, uint16_t duration, uint1
   uint32_t durMs = duration * durMsPerUnit;
   uint32_t perMs = period * perMsPerUnit;
 
-  //@?@ LL_TRACE_INFO2("### LlApi ###  LlExtScanEnable: enable=%u, filterDup=%u", enable, filterDup);
-  APP_TRACE_INFO2("@?@ ### LlApi ###  LlExtScanEnable enable=%u filterDup=%u", enable, filterDup);
-
+  LL_TRACE_INFO2("### LlApi ###  LlExtScanEnable: enable=%u, filterDup=%u", enable, filterDup);
+  
   WSF_ASSERT(lmgrCb.extScanEnaDelayCnt == 0);
   lmgrCb.extScanEnaDelayCnt = lmgrCb.numExtScanPhys;
   lmgrCb.extScanEnaStatus = LL_SUCCESS;

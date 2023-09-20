@@ -43,7 +43,7 @@
 #include "sec_api.h"
 #include "hci_defs.h"
 
-extern uint8_t gu8CodedPhyAuxScan;
+extern uint8_t appCodedPhy;
 
 /*************************************************************************************************/
 /*!
@@ -69,7 +69,7 @@ void StackInitDatc(void)
     DmDevPrivInit();
     DmConnInit();
 
-    if (gu8CodedPhyAuxScan)
+    if (appCodedPhy)
     {
         DmExtScanInit();
     }

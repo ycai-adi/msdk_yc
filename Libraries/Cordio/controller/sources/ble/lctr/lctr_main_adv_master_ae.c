@@ -83,7 +83,7 @@ lctrSyncInfo_t trsfSyncInfo;
 /*! \brief      Active extended scan contexts. */
 lctrActiveExtScan_t lctrActiveExtScan;
 
-extern uint8_t gu8CodedPhyAuxScan;
+extern uint8_t appCodedPhy;
 
 /*************************************************************************************************/
 /*!
@@ -176,9 +176,8 @@ static void lctrMstExtScanExecuteCommonSm(LctrExtScanMsg_t *pMsg)
   switch (pMsg->hdr.event)
   {
     case LCTR_EXT_SCAN_MSG_DISCOVER_ENABLE:
-      //@?@ LL_TRACE_INFO2("lctrMstExtScanExecuteCommonSm: numScanEnabled=%u, scanMode=%u, event=DISCOVER_ENABLE", lmgrCb.numScanEnabled, lmgrCb.scanMode);
-      APP_TRACE_INFO2("lctrMstExtScanExecuteCommonSm: numScanEnabled=%u, scanMode=%u, event=DISCOVER_ENABLE", lmgrCb.numScanEnabled, lmgrCb.scanMode);
-
+      LL_TRACE_INFO2("lctrMstExtScanExecuteCommonSm: numScanEnabled=%u, scanMode=%u, event=DISCOVER_ENABLE", lmgrCb.numScanEnabled, lmgrCb.scanMode);
+      
       lctrMstExtScan.scanTermByHost = 0;
 
       /* Enable filter. */
@@ -197,7 +196,6 @@ static void lctrMstExtScanExecuteCommonSm(LctrExtScanMsg_t *pMsg)
         WsfTimerStartMs(&lctrMstExtScan.tmrScanDur, lctrMstExtScan.scanDurMs);
         if (lctrMstExtScan.scanPerMs)
         {
-          APP_TRACE_INFO1("@?@ start tmrScanPer %d", lctrMstExtScan.scanPerMs);
           WsfTimerStartMs(&lctrMstExtScan.tmrScanPer, lctrMstExtScan.scanPerMs);
         }
       }
@@ -427,7 +425,6 @@ static uint32_t lctrGetPerScanRefTime(uint8_t tmHandle)
 uint8_t lctrMstExtDiscoverBuildOp(lctrExtScanCtx_t *pExtScanCtx)
 {
   BbOpDesc_t * const pOp = &pExtScanCtx->scanBod;
-  APP_TRACE_INFO1("@?@ lctrMstExtDiscoverBuildOp pOp=&pExtScanCtx->scanBod=%d", pOp);
   BbBleData_t * const pBle = &pExtScanCtx->scanBleData;
   BbBleMstAdvEvent_t * const pScan = &pBle->op.mstAdv;
 
@@ -628,7 +625,6 @@ uint8_t lctrMstAuxDiscoverBuildOp(lctrExtScanCtx_t *pExtScanCtx)
 {
   /* Pre-resolve common structures for efficient access. */
   BbOpDesc_t * const pOp = &pExtScanCtx->auxScanBod;
-  APP_TRACE_INFO1("@?@ lctrMstAuxDiscoverBuildOp pOp=&pExtScanCtx->auxScanBod=%d", pOp);
   BbBleData_t * const pBle = &pExtScanCtx->auxBleData;
   BbBleMstAuxAdvEvent_t * const pAuxScan = &pBle->op.mstAuxAdv;
 
@@ -792,12 +788,10 @@ void lctrMstAuxDiscoverOpCommit(lctrExtScanCtx_t *pExtScanCtx, lctrAuxPtr_t *pAu
   if (SchInsertAtDueTime(pOp, NULL))
   {
     pExtScanCtx->auxOpPending = TRUE;
-    APP_TRACE_INFO2("@?@ lctrMstAuxDiscoverOpCommit inserted %d dueUsec=%d", pOp, pOp->dueUsec/1000);
   }
   else
   {
     LL_TRACE_WARN1("Fail to schedule auxiliary scan, scanHandle=%u", LCTR_GET_EXT_SCAN_HANDLE(pExtScanCtx));
-    APP_TRACE_INFO0("@?@ lctrMstAuxDiscoverOpCommit insert failed");
   }
   
 }
@@ -858,7 +852,7 @@ void LctrMstExtScanDefaults(void)
   lmgrCb.numExtScanPhys = 1;
   lctrMstExtScanTbl[LCTR_SCAN_PHY_1M]->scanParam = defScanParam;
 
-  if (gu8CodedPhyAuxScan)
+  if (appCodedPhy)
   {
     lctrMstExtScan.enaPhys = 1 << LCTR_SCAN_PHY_CODED;
   }
@@ -1580,7 +1574,7 @@ lctrPerScanCtx_t *lctrAllocPerScanCtx(void)
       pMsg->event = LCTR_PER_SCAN_SUP_TIMEOUT;
 
       /* Update once PHY is known. */
-      if (gu8CodedPhyAuxScan)
+      if (appCodedPhy)
       {
         pCtx->bleData.chan.txPhy = pCtx->bleData.chan.rxPhy = BB_PHY_BLE_CODED;
       }

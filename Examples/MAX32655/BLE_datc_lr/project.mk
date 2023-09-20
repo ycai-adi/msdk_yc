@@ -18,4 +18,4 @@ INIT_CENTRAL = 1
 # Set to 0 to disable
 # Set to 1 to enable serial port trace messages
 # Set to 2 to enable verbose messages
-TRACE = 0
+TRACE = 1

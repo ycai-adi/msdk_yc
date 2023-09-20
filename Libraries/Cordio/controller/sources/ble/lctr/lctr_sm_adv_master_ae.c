@@ -353,9 +353,7 @@ void lctrMstExtScanExecuteSm(lctrExtScanCtx_t *pExtScanCtx, uint8_t event)
 /*************************************************************************************************/
 void lctrMstCreateSyncExecuteSm(uint8_t event)
 {
-  //LL_TRACE_INFO2("lctrMstCreateSyncExecuteSm: state=%u, event=%u", lctrPerCreateSync.state, event);
-  APP_TRACE_INFO4("@?@ lctrMstCreateSyncExecuteSm: st=%u evt=%u phy %d %d",
-                 lctrPerCreateSync.state, event, lctrMstExtScan.enaPhys, lctrMstExtInit.enaPhys);
+  LL_TRACE_INFO2("lctrMstCreateSyncExecuteSm: state=%u, event=%u", lctrPerCreateSync.state, event);
 
   if (lctrCreateSyncActionTbl[lctrPerCreateSync.state][event])
   {
@@ -374,10 +372,8 @@ void lctrMstCreateSyncExecuteSm(uint8_t event)
 /*************************************************************************************************/
 void lctrMstTransferSyncExecuteSm(uint8_t event)
 {
-  //LL_TRACE_INFO2("lctrMstTransferSyncExecuteSm: state=%u, event=%u", lctrPerTransferSync.state, event);
-  APP_TRACE_INFO4("@?@ lctrMstTransferSyncExecuteSm: st=%u evt=%u phy %d %d",
-                 lctrPerTransferSync.state, event, lctrMstExtScan.enaPhys, lctrMstExtInit.enaPhys);
-
+  LL_TRACE_INFO2("lctrMstTransferSyncExecuteSm: state=%u, event=%u", lctrPerTransferSync.state, event);
+  
   if (lctrTransferSyncActionTbl[lctrPerTransferSync.state][event])
   {
     lctrTransferSyncActionTbl[lctrPerTransferSync.state][event]();

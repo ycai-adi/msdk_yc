@@ -125,16 +125,11 @@ void WsfMsgSend(wsfHandlerId_t handlerId, void *pMsg)
 /*************************************************************************************************/
 void WsfMsgEnq(wsfQueue_t *pQueue, wsfHandlerId_t handlerId, void *pMsg)
 {
+  /*
   wsfMsgHdr_t *h = (wsfMsgHdr_t *)pMsg;
   h->msg_ndx = ++msg_ndx;
-  //if (msg_ndx == 25)
-  if (msg_ndx > 100 && handlerId == 4 && h->param == 0 && h->event == 16)
-  {
-    __asm("nop");
-    __asm("nop");
-  }
   WSF_TRACE_MSG5("msg_enq %03d hndrId=%u p=0x%04X evt=%03d st=%d", h->msg_ndx, handlerId, h->param, h->event, h->status);
-  
+  */
   wsfMsg_t    *p;
 
   WSF_ASSERT(pMsg != NULL);

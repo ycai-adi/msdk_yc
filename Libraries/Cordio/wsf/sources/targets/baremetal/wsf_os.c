@@ -40,14 +40,6 @@
 #include "cmsis_os2.h"
 #endif
 
-#define DBG_EVT           1
-
-#if DBG_EVT == 1
-#define EVT_DBG_BUF_SIZE  64
-uint8_t evt_dbg_buf[EVT_DBG_BUF_SIZE];
-uint32_t evt_dbg_ndx = 0;
-#endif  // DBG_EVT
-
 /**************************************************************************************************
   Compile time assert checks
 **************************************************************************************************/
@@ -78,7 +70,6 @@ WSF_CT_ASSERT(sizeof(uint32_t) == 4);
 /**************************************************************************************************
   Global Variables
 **************************************************************************************************/
-uint8_t gu8Debug = 0;
 extern uint8_t msg_ndx;
 
 /**************************************************************************************************
@@ -153,13 +144,7 @@ void WsfSetEvent(wsfHandlerId_t handlerId, wsfEventMask_t event)
 
   WSF_ASSERT(WSF_HANDLER_FROM_ID(handlerId) < WSF_MAX_HANDLERS);
 
-  //@?@ WSF_TRACE_INFO2("WsfSetEvent handlerId:%u event:%u", handlerId, event);
-  if (handlerId == 2 && event == 64)
-  {
-    __asm("nop");
-    __asm("nop");
-  }
-  WsfTrace("@?@ WsfSetEvent hndId=%u evt=%u", handlerId, event);
+  WSF_TRACE_INFO2("WsfSetEvent handlerId:%u event:%u", handlerId, event);
 
   WSF_CS_ENTER(cs);
   wsfOs.task.handlerEventMask[WSF_HANDLER_FROM_ID(handlerId)] |= event;
@@ -318,18 +303,7 @@ void wsfOsDispatcher(void)
         pTask->handlerEventMask[i] = 0;
         WSF_OS_SET_ACTIVE_HANDLER_ID(i);
         WSF_CS_EXIT(cs);
-#if DBG_EVT == 1
-        //APP_TRACE_INFO2("@?@ hndlr=%d evtMsk=%d", i, eventMask);
-        if (gu8Debug)
-        {
-          evt_dbg_buf[evt_dbg_ndx++] = i;
-          evt_dbg_buf[evt_dbg_ndx++] = eventMask;
-          if (evt_dbg_ndx >= EVT_DBG_BUF_SIZE - 2)
-          {
-            evt_dbg_ndx = 0;
-          }
-        }
-#endif
+
         (*pTask->handler[i])(eventMask, NULL);
       }
     }

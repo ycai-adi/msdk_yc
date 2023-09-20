@@ -43,8 +43,8 @@
 #include "pal_led.h"
 #include "../../../controller/sources/common/sch/sch_int.h"
 
-extern SchCtrlBlk_t schCb;
 extern void LED_On(unsigned int idx);
+extern uint8_t appCodedPhy;
 
 /**************************************************************************************************
   Local Variables
@@ -194,21 +194,25 @@ bool_t hciCoreEvtProcessLlEvt(LlEvt_t *pEvt)
       pMsg->extAdvReportInd.pData = (uint8_t *) pMsg + msgLen;
       memcpy((uint8_t *) pMsg->extAdvReportInd.pData, pEvt->extAdvReportInd.pData, reportLen);
       
-      // display ext scan data here
-      if (pMsg->extAdvReportInd.addr[5] == 0 && pMsg->extAdvReportInd.addr[4] == 0x18 && pMsg->extAdvReportInd.addr[3] == 0x80)
+      // display aux scan data here
+      // 00:18:80 ADI
+      if (appCodedPhy)
       {
-        LED_On(0);  // 0: red led
-      }
+        if (pMsg->extAdvReportInd.addr[5] == 0 && pMsg->extAdvReportInd.addr[4] == 0x18 && pMsg->extAdvReportInd.addr[3] == 0x80)
+        {
+          LED_On(0);  // 0: red led ID
+        }
 
-      printf("\n%02x:%02x:%02x:%02x:%02x:%02x %02X %02X %02X ... %02X %02X %02X", 
-                pMsg->extAdvReportInd.addr[5], pMsg->extAdvReportInd.addr[4], pMsg->extAdvReportInd.addr[3],
-                pMsg->extAdvReportInd.addr[2], pMsg->extAdvReportInd.addr[2], pMsg->extAdvReportInd.addr[0],
-                pMsg->extAdvReportInd.pData[8 + 0], 
-                pMsg->extAdvReportInd.pData[8 + 1], 
-                pMsg->extAdvReportInd.pData[8 + 2], 
-                pMsg->extAdvReportInd.pData[8 + 47],
-                pMsg->extAdvReportInd.pData[8 + 48],
-                pMsg->extAdvReportInd.pData[8 + 49]);
+        printf("\n%02x:%02x:%02x:%02x:%02x:%02x %02X %02X %02X ... %02X %02X %02X", 
+                  pMsg->extAdvReportInd.addr[5], pMsg->extAdvReportInd.addr[4], pMsg->extAdvReportInd.addr[3],
+                  pMsg->extAdvReportInd.addr[2], pMsg->extAdvReportInd.addr[1], pMsg->extAdvReportInd.addr[0],
+                  pMsg->extAdvReportInd.pData[8 + 0], 
+                  pMsg->extAdvReportInd.pData[8 + 1], 
+                  pMsg->extAdvReportInd.pData[8 + 2], 
+                  pMsg->extAdvReportInd.pData[8 + 47],
+                  pMsg->extAdvReportInd.pData[8 + 48],
+                  pMsg->extAdvReportInd.pData[8 + 49]);
+      }
 
       break;
 
