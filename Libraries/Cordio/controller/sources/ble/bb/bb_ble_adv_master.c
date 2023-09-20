@@ -23,6 +23,7 @@
 /*************************************************************************************************/
 
 #include "bb_api.h"
+#include "../../common/bb/bb_int.h"
 #include "pal_bb.h"
 #include "bb_ble_int.h"
 #include "sch_api.h"
@@ -41,6 +42,7 @@
 BbBleScanPktStats_t bbScanStats;          /*!< Scan packet statistics. */
 
 extern const BbRtCfg_t *pBbRtCfg;
+extern BbCtrlBlk_t bbCb;
 
 /*************************************************************************************************/
 /*!
@@ -134,7 +136,7 @@ static uint32_t bbBleCalcScanDurationUsec(BbOpDesc_t *pBod, BbBleMstAdvEvent_t *
 /*************************************************************************************************/
 static bool_t bbContScanOp(BbOpDesc_t *pBod, BbBleMstAdvEvent_t *pScan)
 {
-  APP_TRACE_INFO0("@?@ bbContScanOp");
+  APP_TRACE_INFO1("@?@ bbContScanOp termBod=%d", bbCb.termBod);
   if (BbGetBodTerminateFlag())
   {
     /* Client terminated. */
@@ -160,12 +162,13 @@ static bool_t bbContScanOp(BbOpDesc_t *pBod, BbBleMstAdvEvent_t *pScan)
 
   if (pScan->pTxReqBuf)
   {
-    bbBleSetTifs();   /* active scan or initiating */
+    bbBleSetTifs();   /* active scan or initiating */ 
   }
   else
   {
     bbBleClrIfs();    /* passive scan */
   }
+  APP_TRACE_INFO2("@?@ PalBbBleRxData currT=%d dueUsec=%d", curTime, bbBleCb.bbParam.dueUsec);
   PalBbBleRxData(pScan->pRxAdvBuf, BB_ADVB_MAX_LEN);
 
   return FALSE;
@@ -315,7 +318,7 @@ static void bbMstScanRxCompCback(uint8_t status, int8_t rssi, uint32_t crc, uint
 
   /*BbOpDesc_t * const */pCur = BbGetCurrentBod();
   BbBleData_t * const pBle = pCur->prot.pBle;
-  APP_TRACE_INFO4("@?@ bbMstScanRxCompCback Bod=%d chan=%d %d st=%d", pCur, pBle->chan.chanIdx, bbBleCb.evtState, status);
+  APP_TRACE_INFO4("\n@?@ bbMstScanRxCompCback Bod=%d chan=%d %d st=%d", pCur, pBle->chan.chanIdx, bbBleCb.evtState, status);
   BbBleMstAdvEvent_t * const pScan = &pBle->op.mstAdv;
 
   bool_t bodComplete = FALSE;

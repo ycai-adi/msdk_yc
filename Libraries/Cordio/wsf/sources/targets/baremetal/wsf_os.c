@@ -153,7 +153,13 @@ void WsfSetEvent(wsfHandlerId_t handlerId, wsfEventMask_t event)
 
   WSF_ASSERT(WSF_HANDLER_FROM_ID(handlerId) < WSF_MAX_HANDLERS);
 
-  WSF_TRACE_INFO2("WsfSetEvent handlerId:%u event:%u", handlerId, event);
+  //@?@ WSF_TRACE_INFO2("WsfSetEvent handlerId:%u event:%u", handlerId, event);
+  if (handlerId == 2 && event == 64)
+  {
+    __asm("nop");
+    __asm("nop");
+  }
+  WsfTrace("@?@ WsfSetEvent hndId=%u evt=%u", handlerId, event);
 
   WSF_CS_ENTER(cs);
   wsfOs.task.handlerEventMask[WSF_HANDLER_FROM_ID(handlerId)] |= event;

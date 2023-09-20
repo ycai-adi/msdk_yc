@@ -60,7 +60,7 @@ lctrExtScanCtx_t lctrMstExtInitTbl[LCTR_SCAN_PHY_TOTAL];
 /*! \brief      Extended initiator control block. */
 lctrExtInitCtrlBlk_t lctrMstExtInit;
 
-extern uint8_t u8UseExtScan;
+extern uint8_t gu8CodedPhyAuxScan;
 
 /*************************************************************************************************/
 /*!
@@ -564,7 +564,7 @@ void LctrMstExtInitDefaults(void)
 
   lmgrCb.numExtScanPhys = 1;
 
-  if (u8UseExtScan == 0)
+  if (gu8CodedPhyAuxScan == 0)
   {
     lctrMstExtInit.enaPhys = 1 << LCTR_SCAN_PHY_1M;
   }

@@ -200,10 +200,9 @@ bool_t hciCoreEvtProcessLlEvt(LlEvt_t *pEvt)
         LED_On(0);  // 0: red led
       }
 
-      printf("\n%02x:%02x:%02x:%02x:%02x:%02x dueUses=%d, %02X %02X %02X ... %02X %02X %02X", 
+      printf("\n%02x:%02x:%02x:%02x:%02x:%02x %02X %02X %02X ... %02X %02X %02X", 
                 pMsg->extAdvReportInd.addr[5], pMsg->extAdvReportInd.addr[4], pMsg->extAdvReportInd.addr[3],
                 pMsg->extAdvReportInd.addr[2], pMsg->extAdvReportInd.addr[2], pMsg->extAdvReportInd.addr[0],
-                schCb.pHead->dueUsec/1000,
                 pMsg->extAdvReportInd.pData[8 + 0], 
                 pMsg->extAdvReportInd.pData[8 + 1], 
                 pMsg->extAdvReportInd.pData[8 + 2], 

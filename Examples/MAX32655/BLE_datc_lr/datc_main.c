@@ -91,8 +91,7 @@ Macros
 /**************************************************************************************************
   Global Variables
 **************************************************************************************************/
-extern uint8_t u8UseExtScan;
-extern dmScanCb_t dmScanCb;
+
 /**************************************************************************************************
   Local Variables
 **************************************************************************************************/
@@ -376,8 +375,6 @@ static void datcDmCback(dmEvt_t *pDmEvt)
         } else {
             APP_TRACE_ERR0("Error allocating OOB data");
         }
-    //} else if (pDmEvt->hdr.event == DM_EXT_SCAN_REPORT_IND) {
-    //    APP_TRACE_INFO0("@?@ print here");
     } else {
         len = DmSizeOfEvt(pDmEvt);
 
@@ -499,6 +496,7 @@ static void datcScanStop(dmEvt_t *pMsg)
  *  \return None.
  */
 /*************************************************************************************************/
+#if WSF_TRACE_ENABLED == TRUE
 static void datcPrintName(uint8_t *name)
 {
     /* Allocate a buffer for the device name */
@@ -514,6 +512,7 @@ static void datcPrintName(uint8_t *name)
         WsfBufFree(printBuf);
     }
 }
+#endif
 
 /*************************************************************************************************/
 /*!
@@ -793,6 +792,7 @@ static void datcSpeedTestHandler(dmConnId_t connId)
         APP_TRACE_INFO2("%d bits transferred in %d us", bits, us);
 
         float bps = (float)bits / ((float)us / (float)1000000);
+        (void)bps;
         APP_TRACE_INFO1("%d bps", (unsigned)bps);
 
         /* Reset the counter for the next test */
@@ -1123,9 +1123,6 @@ static void datcProcMsg(dmEvt_t *pMsg)
         break;
 
     case DM_EXT_SCAN_REPORT_IND:
-        dmScanCb.scanState = DM_SCAN_STATE_IDLE;
-        datcRestartScanningHandler();
-
         break;
 
     case DM_CONN_OPEN_IND:

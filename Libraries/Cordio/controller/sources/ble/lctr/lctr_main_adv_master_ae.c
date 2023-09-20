@@ -83,7 +83,7 @@ lctrSyncInfo_t trsfSyncInfo;
 /*! \brief      Active extended scan contexts. */
 lctrActiveExtScan_t lctrActiveExtScan;
 
-extern uint8_t u8UseExtScan;
+extern uint8_t gu8CodedPhyAuxScan;
 
 /*************************************************************************************************/
 /*!
@@ -792,7 +792,7 @@ void lctrMstAuxDiscoverOpCommit(lctrExtScanCtx_t *pExtScanCtx, lctrAuxPtr_t *pAu
   if (SchInsertAtDueTime(pOp, NULL))
   {
     pExtScanCtx->auxOpPending = TRUE;
-    APP_TRACE_INFO2("@?@ lctrMstAuxDiscoverOpCommit inserted %d %d", pOp, pOp->dueUsec/1000);
+    APP_TRACE_INFO2("@?@ lctrMstAuxDiscoverOpCommit inserted %d dueUsec=%d", pOp, pOp->dueUsec/1000);
   }
   else
   {
@@ -858,7 +858,7 @@ void LctrMstExtScanDefaults(void)
   lmgrCb.numExtScanPhys = 1;
   lctrMstExtScanTbl[LCTR_SCAN_PHY_1M]->scanParam = defScanParam;
 
-  if (u8UseExtScan)
+  if (gu8CodedPhyAuxScan)
   {
     lctrMstExtScan.enaPhys = 1 << LCTR_SCAN_PHY_CODED;
   }
@@ -1580,7 +1580,7 @@ lctrPerScanCtx_t *lctrAllocPerScanCtx(void)
       pMsg->event = LCTR_PER_SCAN_SUP_TIMEOUT;
 
       /* Update once PHY is known. */
-      if (u8UseExtScan)
+      if (gu8CodedPhyAuxScan)
       {
         pCtx->bleData.chan.txPhy = pCtx->bleData.chan.rxPhy = BB_PHY_BLE_CODED;
       }

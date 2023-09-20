@@ -29,8 +29,6 @@
 #include "sch_api.h"
 #include "bb_ble_sniffer_api.h"
 
-extern uint8_t u8UseExtScan;
-
 /**************************************************************************************************
   Functions
 **************************************************************************************************/
@@ -47,10 +45,7 @@ void LlInitBbInit(void)
   BbBleInit();
 
   #ifdef INIT_CENTRAL
-    if (u8UseExtScan == 0)
-    {
     BbBleScanMasterInit();
-    }
     BbBleConnMasterInit();
   #else
     #ifdef INIT_OBSERVER

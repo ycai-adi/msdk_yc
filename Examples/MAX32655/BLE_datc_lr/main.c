@@ -81,7 +81,7 @@ static LlRtCfg_t mainLlRtCfg;
 
 volatile int wutTrimComplete;
 
-extern uint8_t u8UseExtScan;
+extern uint8_t gu8CodedPhyAuxScan;
 
 /**************************************************************************************************
   Functions
@@ -241,7 +241,7 @@ int main(void)
     APP_TRACE_INFO0("use extended scan (Coded PHY S=8)");
     APP_TRACE_INFO1("BT_VER=%d", BT_VER);
     APP_TRACE_INFO0("====================================");
-    u8UseExtScan = 1;
+    gu8CodedPhyAuxScan = 1;
 
 #if defined(HCI_TR_EXACTLE) && (HCI_TR_EXACTLE == 1)
     WsfCsEnter();

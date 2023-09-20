@@ -29,7 +29,7 @@
 #include "app_api.h"
 #include "app_main.h"
 
-extern uint8_t u8UseExtScan;
+extern uint8_t gu8CodedPhyAuxScan;
 
 /*************************************************************************************************/
 /*!
@@ -78,17 +78,17 @@ void AppScanStart(uint8_t mode, uint8_t scanType, uint16_t duration)
 {
   if (appMasterScanMode())
   {
-    if (u8UseExtScan)
+    if (gu8CodedPhyAuxScan)
     {
       DmScanSetInterval(HCI_SCAN_PHY_LE_CODED_BIT, &pAppMasterCfg->scanInterval, &pAppMasterCfg->scanWindow);
 
-      DmScanStart(HCI_SCAN_PHY_LE_CODED_BIT, mode, &scanType, TRUE, duration, 0);
+      DmScanStart(HCI_SCAN_PHY_LE_CODED_BIT, mode, &scanType, FALSE, duration, 0);
     }
     else
     {
-    DmScanSetInterval(HCI_SCAN_PHY_LE_1M_BIT, &pAppMasterCfg->scanInterval, &pAppMasterCfg->scanWindow);
+      DmScanSetInterval(HCI_SCAN_PHY_LE_1M_BIT, &pAppMasterCfg->scanInterval, &pAppMasterCfg->scanWindow);
 
-    DmScanStart(HCI_SCAN_PHY_LE_1M_BIT, mode, &scanType, TRUE, duration, 0);
+      DmScanStart(HCI_SCAN_PHY_LE_1M_BIT, mode, &scanType, TRUE, duration, 0);
     }
   }
 }

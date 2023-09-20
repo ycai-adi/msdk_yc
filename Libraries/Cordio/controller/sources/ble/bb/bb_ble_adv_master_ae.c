@@ -150,7 +150,7 @@ static void bbMstAuxScanTxCompCback(uint8_t status)
 /*************************************************************************************************/
 static void bbMstAuxScanRxCompCback(uint8_t status, int8_t rssi, uint32_t crc, uint32_t timestamp, uint8_t rxPhyOptions)
 {
-  APP_TRACE_INFO0("@?@ bbMstAuxScanRxCompCback");
+  APP_TRACE_INFO3("\n@?@ bbMstAuxScanRxCompCback evtSt=%d st=%d rssi=%d", bbBleCb.evtState, status, rssi);
   BB_ISR_START();
 
   WSF_ASSERT(BbGetCurrentBod());

@@ -37,7 +37,7 @@
 
 #include "ll_api.h"
 
-extern uint8_t u8UseExtScan;
+extern uint8_t gu8CodedPhyAuxScan;
 
 /*************************************************************************************************/
 /*!
@@ -60,7 +60,7 @@ void HciLeSetExtScanParamCmd(uint8_t ownAddrType, uint8_t scanFiltPolicy, uint8_
   (void)status;
 
   //@?@ TODO
-  if (u8UseExtScan == 0)
+  if (gu8CodedPhyAuxScan == 0)
   {
     WSF_ASSERT(status == LL_SUCCESS);
   }

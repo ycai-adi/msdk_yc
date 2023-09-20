@@ -48,7 +48,7 @@
 /**************************************************************************************************
   Global Variables
 **************************************************************************************************/
-extern uint8_t gu8Debug;
+extern uint8_t gu8CodedPhyAuxScan;
 
 /*! \brief      Transitive context (valid only for a single Advertising Event). */
 struct
@@ -354,6 +354,7 @@ static void lctrMstAcadHandler(lctrPerScanCtx_t * const pPerScanCtx)
 /*************************************************************************************************/
 static bool_t lctrExtAdvRptPend(lctrExtScanCtx_t *pExtScanCtx, LlExtAdvReportInd_t *pRpt, lctrRptState_t *pState)
 {
+  APP_TRACE_INFO1("@?@ lctrExtAdvRptPend st=%d", pExtScanCtx->state);
   /* Only called with the first report in the sequence. */
   WSF_ASSERT(*pState == LCTR_RPT_STATE_IDLE);
 
@@ -366,9 +367,10 @@ static bool_t lctrExtAdvRptPend(lctrExtScanCtx_t *pExtScanCtx, LlExtAdvReportInd
   uint64_t hash;
   lctrAdvRptGenerateExtHash(&hash, pRpt->addrType, BstreamToBda64(pRpt->addr),
                             pRpt->eventType, pRpt->advSID, pExtScanCtx->extAdvHdr.did);
-  if (lctrAdvRptCheckDuplicate(&lctrMstExtScan.advFilt, hash))
+  if (lctrAdvRptCheckDuplicate(&lctrMstExtScan.advFilt, hash) && (gu8CodedPhyAuxScan == 0))
   {
     /* Duplicate found, just exit. */
+    APP_TRACE_INFO0("@?@ duplicate");
     return FALSE;
   }
 
@@ -1145,7 +1147,7 @@ bool_t lctrMstDiscoverRxAuxAdvPktHandler(BbOpDesc_t *pOp, const uint8_t *pAdvBuf
   {
     case LL_PDU_AUX_ADV_IND:
     {
-      if (pExtScanCtx->extAdvHdr.advMode == 0)          /* Non-connectable and non-scannable. */
+      if (pExtScanCtx->extAdvHdr.advMode == 0)  /* Non-connectable and non-scannable. */
       {
         /* Retrieve advA and tgtA if not present in the ADV_EXT_IND and present here. */
         if ((lctrMstExtScanIsr.advAReceived == FALSE) &&
@@ -1168,7 +1170,6 @@ bool_t lctrMstDiscoverRxAuxAdvPktHandler(BbOpDesc_t *pOp, const uint8_t *pAdvBuf
         if (lctrMstExtScanIsr.advAReceived == TRUE)
         {
           pExtScanCtx->extAdvHdr.extHdrFlags |= LL_EXT_HDR_ADV_ADDR_BIT;
-
         }
         pExtScanCtx->extAdvHdr.advAddr = lctrMstExtScanIsr.advA;
         lctrMstExtScanIsr.advHdr.txAddrRnd = lctrMstExtScanIsr.advARand;
@@ -1180,7 +1181,7 @@ bool_t lctrMstDiscoverRxAuxAdvPktHandler(BbOpDesc_t *pOp, const uint8_t *pAdvBuf
         pExtScanCtx->extAdvHdr.tgtAddr = lctrMstExtScanIsr.tgtA;
         lctrMstExtScanIsr.advHdr.rxAddrRnd = lctrMstExtScanIsr.tgtARand;
       }
-      else                                              /* Connectable or scannable. */
+      else  /* Connectable or scannable. */
       {
         /* AdvA is mandatory. */
         if ((lctrMstExtScanIsr.extAdvHdrFlags & LL_EXT_HDR_ADV_ADDR_BIT) == 0)
@@ -1400,6 +1401,8 @@ bool_t lctrMstDiscoverRxAuxAdvPktHandler(BbOpDesc_t *pOp, const uint8_t *pAdvBuf
                                                LL_RPT_EVT_DIRECT_ADV_BIT : 0;
   pExtScanCtx->data.scan.auxAdvRpt.rssi = pAuxScan->auxAdvRssi;
 
+
+
   return txScanReq;
 }
 
@@ -1577,6 +1580,9 @@ bool_t lctrMstDiscoverRxAuxChainPostProcessHandler(BbOpDesc_t *pOp, const uint8_
   lctrExtScanCtx_t * const pExtScanCtx = pOp->pCtx;
   bool_t result = TRUE;
 
+  APP_TRACE_INFO3("@?@ lctrMstDiscoverRxAuxChainPostProcessHandler st=%d mode=%d rptSt=%d",
+    pExtScanCtx->data.scan.advRptState, pExtScanCtx->extAdvHdr.advMode, pExtScanCtx->data.scan.advRptState);
+  
   /*** Report generation. ***/
 
   if (lctrMstExtScanIsr.filtResult)
@@ -1673,7 +1679,9 @@ bool_t lctrMstDiscoverRxAuxChainPostProcessHandler(BbOpDesc_t *pOp, const uint8_
       ((lctrMstExtScanIsr.extAdvHdrFlags & LL_EXT_HDR_AUX_PTR_BIT) == 0))    /* No more auxiliary packet. */
   {
     /* End of auxiliary sequence. */
+    APP_TRACE_INFO1("@?@ submit advRptSt=%d", pExtScanCtx->data.scan.advRptState);
     lctrExtAdvRptSubmit(pExtScanCtx, &pExtScanCtx->data.scan.advRpt, &pExtScanCtx->data.scan.advRptState);
+    APP_TRACE_INFO0("@?@ done");
   }
 
   return result;
@@ -1854,7 +1862,7 @@ static void lctrMstExtDiscoverReschedule(lctrExtScanCtx_t *pExtScanCtx)
 {
   lctrExtScanCtx_t *pNextScanCtx = pExtScanCtx;
   BbOpDesc_t *pOp = &pExtScanCtx->scanBod;
-  APP_TRACE_INFO2("@?@ lctrMstExtDiscoverReschedule %d dueUsec=%d", pOp, pExtScanCtx->scanWinStartUsec);
+  APP_TRACE_INFO2("@?@ lctrMstExtDiscoverReschedule %d dueUsec=%d", pOp, pExtScanCtx->scanWinStartUsec/1000);
   BbBleData_t *pBle = pOp->prot.pBle;
   BbBleMstAdvEvent_t *pScan = &pBle->op.mstAdv;
   uint8_t scanPhyIndex = (LCTR_GET_EXT_SCAN_HANDLE(pExtScanCtx) == LCTR_SCAN_PHY_CODED) ? LCTR_SCAN_PHY_CODED : LCTR_SCAN_PHY_1M;
@@ -1960,10 +1968,10 @@ static void lctrMstExtDiscoverReschedule(lctrExtScanCtx_t *pExtScanCtx)
 /*************************************************************************************************/
 void lctrMstExtDiscoverEndOp(BbOpDesc_t *pOp)
 {
-  APP_TRACE_INFO2("@?@ lctrMstExtDiscoverEndOp %d %d", pOp, pOp->dueUsec/1000);
-  gu8Debug = 1;
-
   lctrExtScanCtx_t * const pExtScanCtx = pOp->pCtx;
+  
+  APP_TRACE_INFO3("@?@ lctrMstExtDiscoverEndOp %d %d auxopPending=%d", pOp, pOp->dueUsec/1000, pExtScanCtx->auxOpPending);
+  
   const uint8_t scanPhyIndex = (LCTR_GET_EXT_SCAN_HANDLE(pExtScanCtx) == LCTR_SCAN_PHY_CODED) ? LCTR_SCAN_PHY_CODED : LCTR_SCAN_PHY_1M;
 
   if (pExtScanCtx->shutdown || pExtScanCtx->selfTerm)
@@ -2017,7 +2025,7 @@ void lctrMstExtDiscoverAbortOp(BbOpDesc_t *pOp)
 /*************************************************************************************************/
 void lctrMstAuxDiscoverEndOp(BbOpDesc_t *pOp)
 {
-  APP_TRACE_INFO2("@?@ lctrMstAuxDiscoverEndOp %d dueUsec=%d", pOp, pOp->dueUsec);
+  APP_TRACE_INFO2("@?@ lctrMstAuxDiscoverEndOp %d dueUsec=%d", pOp, pOp->dueUsec / 1000);
   lctrExtScanCtx_t * const pExtScanCtx = pOp->pCtx;
   const uint8_t scanPhyIndex = (LCTR_GET_EXT_SCAN_HANDLE(pExtScanCtx) == LCTR_SCAN_PHY_CODED) ? LCTR_SCAN_PHY_CODED : LCTR_SCAN_PHY_1M;
 
